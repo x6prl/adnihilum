@@ -232,16 +232,6 @@ static const char asset_paths[ASSETS_COUNT][ASSET_PATH_STRING_MAX_SIZE] = {
 	[ASSET_FAVICON_SVG] = "/favicon.svg",
 };
 
-void assets_free()
-{
-	free(assets_memory);
-	assets_memory = NULL;
-	for (uint i = 0; i < ASSETS_COUNT; ++i) {
-		assets[i].data = NULL;
-		assets[i].size = 0;
-	}
-}
-
 bool assets_load()
 {
 	FILE *file_descriptors[ASSETS_COUNT] = {};
@@ -283,7 +273,6 @@ close_assets_file_descriptors_and_exit_with_error:
 		for (uint i = 0; i < ASSETS_COUNT; ++i) {
 			fclose(file_descriptors[i]);
 		}
-		assets_free();
 		return false;
 	}
 
@@ -299,7 +288,6 @@ close_assets_file_descriptors_and_exit_with_error:
 			// close opened file descriptors, free memory and exit with error
 			for (; i < ASSETS_COUNT; ++i) {
 				fclose(file_descriptors[i]);
-				assets_free();
 				return false;
 			}
 		}
@@ -334,15 +322,11 @@ bool asset_find(const char *url, asset_t **asset)
 static uint8_t *tls_key_and_cert_memory;
 static size_t tls_key_and_cert_memory_size;
 static uint8_t *tls_cert, *tls_key;
-void tls_data_free()
+void tls_data_zero()
 {
 	if (!tls_key_and_cert_memory)
 		return;
 	secure_zero(tls_key_and_cert_memory, tls_key_and_cert_memory_size);
-	free(tls_key_and_cert_memory);
-	tls_key_and_cert_memory_size = 0;
-	tls_key = NULL;
-	tls_cert = NULL;
 }
 
 /*
@@ -418,9 +402,6 @@ cleanup:
 		fclose(cert_file);
 	if (key_file)
 		fclose(key_file);
-	if (!success) {
-		tls_data_free();
-	}
 	return success;
 }
 
@@ -1255,19 +1236,13 @@ int main(int argc, char **argv)
 	exit_code = EXIT_SUCCESS;
 
 cleanup:
-	if (efd >= 0) {
-		close(efd);
-	}
-	if (reaper_tfd >= 0) {
-		close(reaper_tfd);
-	}
 	if (d) {
 		MHD_stop_daemon(d);
 	}
-	tls_data_free();
-	assets_free();
+	// we do not need to free memory, just to zero the sensitive one
+	tls_data_zero();
+	storage_zero();
 
-	storage_free();
 	if (req_ctx_memory) {
 		secure_zero(req_ctx_memory, req_ctx_memory_size);
 	}

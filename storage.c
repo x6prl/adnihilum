@@ -226,11 +226,14 @@ void storage_init(htable_index_t _htable_size)
 	STORAGE_ZONE_END(init_zone);
 }
 
-void storage_free()
+void storage_zero()
 {
-	STORAGE_ZONE(free_zone, "storage_free");
+	STORAGE_ZONE(free_zone, "storage_zero");
+	if (htable_index_t htable_used = (htable_size - htable_free);
+	    htable_used > 0) {
+		LOGE("dropping %u secrets", htable_used);
+	}
 	secure_zero(mallocated_data.data, mallocated_data.size);
-	free(mallocated_data.data);
 #if STATISTICS
 	LOG("lp statistics:\n"
 	    "inserts: %lu\n"
