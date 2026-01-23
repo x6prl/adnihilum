@@ -29,7 +29,7 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 
-static __always_inline const char *now_local_iso8601();
+static inline const char *now_local_iso8601();
 
 static inline enum MHD_Result log_header_cb(void *cls, enum MHD_ValueKind kind,
 					    const char *k, const char *v)

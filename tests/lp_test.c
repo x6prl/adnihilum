@@ -35,25 +35,23 @@
 static htable_key_t g_keys[TABLE_SIZE];
 static int g_vals[TABLE_SIZE];
 
-static __attribute__((always_inline)) inline bool key_is_null(htable_key_t a)
+static bool key_is_null(htable_key_t a)
 {
 	return (a.h == 0 && a.l == 0);
 }
 
-static __attribute__((always_inline)) inline void key_set_null(htable_key_t *a)
+static void key_set_null(htable_key_t *a)
 {
 	a->h = 0;
 	a->l = 0;
 }
 
-static __attribute__((always_inline)) inline bool key_cmp(htable_key_t a,
-							  htable_key_t b)
+static bool key_cmp(htable_key_t a, htable_key_t b)
 {
 	return (a.h == b.h && a.l == b.l);
 }
 
-static __attribute__((always_inline)) inline void htable_swap(uint32_t a,
-							      uint32_t b)
+static void htable_swap(uint32_t a, uint32_t b)
 {
 	// swap keys
 	htable_key_t tmpk = g_keys[a];
@@ -66,7 +64,7 @@ static __attribute__((always_inline)) inline void htable_swap(uint32_t a,
 	g_vals[b] = tmpv;
 }
 
-static __always_inline uint64_t htable_hash(htable_key_t data)
+static uint64_t htable_hash(htable_key_t data)
 {
 	uint64_t z = data.h ^ data.l;
 	// splitmix64

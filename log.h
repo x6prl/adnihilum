@@ -35,7 +35,7 @@
 #include <syslog.h>
 #endif
 
-static __always_inline const char *now_local_iso8601()
+static inline const char *now_local_iso8601()
 {
 	static thread_local char buf[32];
 	time_t t = time(NULL);

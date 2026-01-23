@@ -28,29 +28,28 @@
  */
 
 // implemented in storage.c
-static __always_inline void htable_swap(htable_index_t a, htable_index_t b);
-static __always_inline uint64_t htable_hash(htable_key_t data);
+static inline void htable_swap(htable_index_t a, htable_index_t b);
+static inline uint64_t htable_hash(htable_key_t data);
 
 // implemented in storage.c
-static __always_inline bool key_cmp(htable_key_t a, htable_key_t b);
-static __always_inline bool key_is_null(htable_key_t a);
-static __always_inline void key_set_null(htable_key_t *a);
+static inline bool key_cmp(htable_key_t a, htable_key_t b);
+static inline bool key_is_null(htable_key_t a);
+static inline void key_set_null(htable_key_t *a);
 
 // table_size must be a power of 2
-static __always_inline htable_index_t lp_home_index(uint64_t hash,
-						    htable_index_t table_size);
+static inline htable_index_t lp_home_index(uint64_t hash,
+					   htable_index_t table_size);
 // keys must not be full
-static __always_inline htable_index_t
-lp_find_free_slot(const htable_key_t *keys, const htable_key_t key,
-		  htable_index_t table_size);
-static __always_inline htable_index_t lp_lookup(const htable_key_t *keys,
-						const htable_key_t key,
-						htable_index_t table_size);
+static inline htable_index_t lp_find_free_slot(const htable_key_t *keys,
+					       const htable_key_t key,
+					       htable_index_t table_size);
+static inline htable_index_t lp_lookup(const htable_key_t *keys,
+				       const htable_key_t key,
+				       htable_index_t table_size);
 // must be called only on existed keys
 // returns the index of erased key
-static __always_inline htable_index_t lp_erase(htable_key_t *keys,
-					       const htable_index_t i,
-					       htable_index_t table_size);
+static inline htable_index_t
+lp_erase(htable_key_t *keys, const htable_index_t i, htable_index_t table_size);
 
 /*
  * ====================================================================== 
@@ -67,15 +66,15 @@ static struct {
 } lp_statistics;
 #endif
 
-static __always_inline htable_index_t lp_home_index(uint64_t h,
-						    htable_index_t table_size)
+static inline htable_index_t lp_home_index(uint64_t h,
+					   htable_index_t table_size)
 {
 	return h & (table_size - 1);
 }
 
-static __always_inline htable_index_t
-lp_find_free_slot(const htable_key_t *keys, const htable_key_t key,
-		  htable_index_t table_size)
+static inline htable_index_t lp_find_free_slot(const htable_key_t *keys,
+					       const htable_key_t key,
+					       htable_index_t table_size)
 {
 #if STATISTICS
 	lp_statistics.insertion_count++;
@@ -102,9 +101,9 @@ repeat:
 	}
 }
 
-static __always_inline htable_index_t lp_lookup(const htable_key_t *keys,
-						const htable_key_t key,
-						htable_index_t table_size)
+static inline htable_index_t lp_lookup(const htable_key_t *keys,
+				       const htable_key_t key,
+				       htable_index_t table_size)
 {
 	const uint64_t h = htable_hash(key);
 	const htable_index_t i = lp_home_index(h, table_size);
@@ -132,9 +131,9 @@ static __always_inline htable_index_t lp_lookup(const htable_key_t *keys,
 	return table_size;
 }
 
-static __always_inline htable_index_t lp_erase(htable_key_t *keys,
-					       const htable_index_t start_idx,
-					       htable_index_t table_size)
+static inline htable_index_t lp_erase(htable_key_t *keys,
+				      const htable_index_t start_idx,
+				      htable_index_t table_size)
 {
 	htable_index_t hole = start_idx;
 	htable_index_t next = hole;

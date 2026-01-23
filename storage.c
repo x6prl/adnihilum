@@ -31,13 +31,13 @@
 
 #define VALID_UNTIL_EMPTY UINT32_MAX
 
-static __always_inline void htable_swap(htable_index_t a, htable_index_t b);
-static __always_inline uint64_t htable_hash(htable_key_t data);
+static void htable_swap(htable_index_t a, htable_index_t b);
+static uint64_t htable_hash(htable_key_t data);
 
 // key-specific
-static __always_inline bool key_cmp(htable_key_t a, htable_key_t b);
-static __always_inline bool key_is_null(htable_key_t a);
-static __always_inline void key_set_null(htable_key_t *a);
+static bool key_cmp(htable_key_t a, htable_key_t b);
+static bool key_is_null(htable_key_t a);
+static void key_set_null(htable_key_t *a);
 
 bool htable_get_blob_index(htable_key_t id, size_t *index);
 bool htable_find_free_slot(htable_key_t id, size_t size, htable_index_t *index);
@@ -90,23 +90,23 @@ static uint64_t storage_rip_total;
 #include <arm_neon.h>
 #endif
 
-static __always_inline bool key_cmp(htable_key_t a, htable_key_t b)
+static bool key_cmp(htable_key_t a, htable_key_t b)
 {
 	return a.h == b.h && a.l == b.l;
 }
 
-static __always_inline bool key_is_null(htable_key_t a)
+static bool key_is_null(htable_key_t a)
 {
 	return (a.h | a.l) == 0;
 }
 
-static __always_inline void key_set_null(htable_key_t *a)
+static void key_set_null(htable_key_t *a)
 {
 	a->h = 0;
 	a->l = 0;
 }
 
-static __always_inline void htable_swap(htable_index_t a, htable_index_t b)
+static void htable_swap(htable_index_t a, htable_index_t b)
 {
 	if (a == b) {
 		return;
@@ -128,12 +128,12 @@ static __always_inline void htable_swap(htable_index_t a, htable_index_t b)
 	}
 }
 
-static __always_inline uint64_t htable_hash_rotl64(uint64_t x, unsigned r)
+static uint64_t htable_hash_rotl64(uint64_t x, unsigned r)
 {
 	return (x << r) | (x >> (64 - r));
 }
 
-static __always_inline uint64_t htable_hash(htable_key_t data)
+static uint64_t htable_hash(htable_key_t data)
 {
 	const uint64_t k0 = 0x9e3779b97f4a7c15ULL;
 	const uint64_t k1 = 0xbf58476d1ce4e5b9ULL;

@@ -69,7 +69,7 @@ static inline uint32_t bbucket_items_free(balloc_t *ba, uint index);
 
 // util
 // i must never be 0
-static __always_inline int ilog2_u32(uint32_t i);
+static inline int ilog2_u32(uint32_t i);
 
 /*
  * ====================================================================== 
@@ -94,7 +94,7 @@ typedef struct __attribute__((aligned(16))) balloc_t {
 	bucket_t *buckets;
 } balloc_t;
 
-static __always_inline int ilog2_u32(uint32_t i)
+static inline int ilog2_u32(uint32_t i)
 {
 	return 31 - __builtin_clz(i);
 }

@@ -134,7 +134,7 @@ static bool tailscale_forwarded_addr(struct MHD_Connection *conn,
 }
 #endif
 
-static inline const struct sockaddr *
+static const struct sockaddr *
 connection_peer_addr([[maybe_unused]] struct MHD_Connection *conn,
 		     const union MHD_ConnectionInfo *ci,
 		     [[maybe_unused]] struct sockaddr_storage *storage,
@@ -405,8 +405,8 @@ cleanup:
 	return success;
 }
 
-static __always_inline bool all16_eq_byte_scalar(const uint8_t *data,
-						 size_t remaining, uint8_t ch)
+static bool all16_eq_byte_scalar(const uint8_t *data, size_t remaining,
+				 uint8_t ch)
 {
 	if (remaining < REPLACE_SIZE)
 		return false;
@@ -417,8 +417,7 @@ static __always_inline bool all16_eq_byte_scalar(const uint8_t *data,
 	return true;
 }
 
-static __always_inline bool all16_eq_byte(const uint8_t *data, size_t remaining,
-					  uint8_t ch)
+static bool all16_eq_byte(const uint8_t *data, size_t remaining, uint8_t ch)
 {
 	if (remaining < REPLACE_SIZE)
 		return false;
@@ -452,8 +451,7 @@ static __always_inline bool all16_eq_byte(const uint8_t *data, size_t remaining,
 
 static char *html_uptime_ptr, *html_served_ptr, *html_version_ptr;
 
-static inline uint8_t *find_16_scalar(const uint8_t *data, size_t size,
-				      uint8_t ch)
+static uint8_t *find_16_scalar(const uint8_t *data, size_t size, uint8_t ch)
 {
 	if (size < REPLACE_SIZE)
 		return NULL;
