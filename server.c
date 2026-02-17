@@ -32,13 +32,14 @@
 
 #include <sys/epoll.h>
 #include <sys/timerfd.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <arpa/inet.h>
 #include <errno.h>
 #include <netinet/in.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <limits.h>
 #include <string.h>
@@ -232,68 +233,82 @@ static const char asset_paths[ASSETS_COUNT][ASSET_PATH_STRING_MAX_SIZE] = {
 	[ASSET_FAVICON_SVG] = "/favicon.svg",
 };
 
+/*
+ * In case of errors server will not start, thus we do not care of closing fds — OS will do it automatically
+ */
+ssize_t open_file_and_get_size(const char *file_path, int *fd_out)
+{
+	int fd = open(file_path, O_RDONLY);
+	if (fd < 0) {
+		LOGE("Failed to open file %s", file_path);
+		return -1;
+	}
+	*fd_out = fd;
+	struct stat statbuf = { 0 };
+	if (fstat(fd, &statbuf) < 0) {
+		LOGE("Failed to get the size of file %s", file_path);
+		return -1;
+	}
+	return statbuf.st_size;
+}
+
+bool read_and_close_file(int fd, uint8_t *out, ssize_t size)
+{
+	for (ssize_t offset = 0; offset < size;) {
+		ssize_t bytes_read = read(fd, out + offset, size - offset);
+		if (0 == bytes_read) {
+			LOGE("File is shorter than expected (%ld vs %ld)",
+			     offset, size);
+			return false;
+		}
+		if (-1 == bytes_read) {
+			LOGE("Error while reading %s", strerror(errno));
+			return false;
+		}
+		offset += bytes_read;
+	}
+	close(fd);
+	return true;
+}
+
+/*
+ * In case of errors server will not start, thus we do not care of closing fds — OS will do it automatically
+ */
 bool assets_load()
 {
-	FILE *file_descriptors[ASSETS_COUNT] = {};
-	size_t asset_sizes[ASSETS_COUNT] = {}, assets_size_total = 0;
+	int file_descriptors[ASSETS_COUNT] = {};
+	ssize_t asset_sizes[ASSETS_COUNT] = {}, assets_size_total = 0;
 	// open assets and calculate size
 	for (size_t i = 0; i < ASSETS_COUNT; ++i) {
-		const char *const file_path = asset_file_paths[i];
-		FILE **f = &file_descriptors[i];
-		*f = fopen(file_path, "rb");
-		if (!*f) {
-			LOGE("Failed to open %s", file_path);
-			goto close_assets_file_descriptors_and_exit_with_error;
+		ssize_t asset_size = open_file_and_get_size(
+			asset_file_paths[i], &file_descriptors[i]);
+		if (asset_size < 0) {
+			return false;
 		}
-		if (fseek(*f, 0, SEEK_END) != 0) {
-			++i;
-			goto close_assets_file_descriptors_and_exit_with_error;
-		}
-		long file_size = ftell(*f);
-		if (file_size < 0) {
-			++i;
-			goto close_assets_file_descriptors_and_exit_with_error;
-		}
-		asset_sizes[i] = file_size;
-		assets_size_total += file_size;
-		rewind(*f);
-		continue;
-close_assets_file_descriptors_and_exit_with_error:
-		while (i) {
-			--i;
-			fclose(file_descriptors[i]);
-		}
-		return false;
+		asset_sizes[i] = asset_size;
+		assets_size_total += asset_size;
 	}
 
 	// allocate memory
 	assets_memory = (uint8_t *)malloc(assets_size_total);
 	if (!assets_memory) {
 		LOGE("Failed to allocate %lu bytes", assets_size_total);
-		for (size_t i = 0; i < ASSETS_COUNT; ++i) {
-			fclose(file_descriptors[i]);
-		}
 		return false;
 	}
 
 	// read files
 	uint8_t *current_ptr = assets_memory;
 	for (size_t i = 0; i < ASSETS_COUNT; ++i) {
-		asset_t *asset = &assets[i];
 		size_t asset_size = asset_sizes[i];
-		FILE *f = file_descriptors[i];
-		size_t bytes_read = fread(current_ptr, 1, asset_size, f);
-		if (bytes_read != asset_size) {
-			LOGE("Error while reading %s", asset_file_paths[i]);
-			// close opened file descriptors, free memory and exit with error
-			for (; i < ASSETS_COUNT; ++i) {
-				fclose(file_descriptors[i]);
-				return false;
-			}
+
+		if (!read_and_close_file(file_descriptors[i], current_ptr,
+					 asset_size)) {
+			LOGE("Failed to read file %s", asset_file_paths[i]);
+			return false;
 		}
-		fclose(f);
-		asset->data = current_ptr;
-		asset->size = asset_size;
+
+		assets[i].data = current_ptr;
+		assets[i].size = asset_size;
 		current_ptr += asset_size;
 	}
 	LOG("%u static assets loaded for paths:", ASSETS_COUNT);
@@ -331,45 +346,22 @@ void tls_data_zero()
 
 /*
  * TLS helpers
+ * In case of errors server will not start, thus we do not care of closing fds — OS will do it automatically
   */
-
 bool tls_data_load(const char *cert_path, const char *key_path)
 {
-	FILE *cert_file = NULL;
-	FILE *key_file = NULL;
-	size_t cert_size = 0;
-	size_t key_size = 0;
-	bool success = false;
+	int cert_file = -1;
+	int key_file = -1;
 
-	cert_file = fopen(cert_path, "rb");
-	if (!cert_file) {
-		LOGE("Failed to open certificate file %s", cert_path);
-		goto cleanup;
+	ssize_t cert_size = open_file_and_get_size(cert_path, &cert_file);
+	if (cert_size < 0) {
+		return false;
 	}
-	if (fseek(cert_file, 0, SEEK_END) != 0) {
-		goto cleanup;
-	}
-	long cert_len = ftell(cert_file);
-	if (cert_len <= 0) {
-		goto cleanup;
-	}
-	rewind(cert_file);
-	cert_size = (size_t)cert_len;
 
-	key_file = fopen(key_path, "rb");
-	if (!key_file) {
-		LOGE("Failed to open key file %s", key_path);
-		goto cleanup;
+	ssize_t key_size = open_file_and_get_size(key_path, &key_file);
+	if (key_size < 0) {
+		return false;
 	}
-	if (fseek(key_file, 0, SEEK_END) != 0) {
-		goto cleanup;
-	}
-	long key_len = ftell(key_file);
-	if (key_len <= 0) {
-		goto cleanup;
-	}
-	rewind(key_file);
-	key_size = (size_t)key_len;
 
 	tls_key_and_cert_memory_size = cert_size + key_size + 2; // 2 for \0
 	tls_key_and_cert_memory =
@@ -377,32 +369,23 @@ bool tls_data_load(const char *cert_path, const char *key_path)
 	if (!tls_key_and_cert_memory) {
 		LOGE("Failed to allocate %zu bytes for certificate the and the key",
 		     tls_key_and_cert_memory_size);
-		goto cleanup;
 	}
 	tls_key = tls_key_and_cert_memory;
 	tls_cert = tls_key_and_cert_memory + key_size + 1;
 
-	size_t read = fread(tls_cert, 1, cert_size, cert_file);
-	if (read != cert_size) {
-		LOGE("Failed to read certificate file %s", cert_path);
-		goto cleanup;
+	if (!read_and_close_file(cert_file, tls_cert, cert_size)) {
+		LOGE("Error while reading %s", cert_path);
+		return false;
 	}
 	tls_cert[cert_size] = '\0';
 
-	read = fread(tls_key, 1, key_size, key_file);
-	if (read != key_size) {
-		LOGE("Failed to read key file %s", key_path);
-		goto cleanup;
+	if (!read_and_close_file(key_file, tls_key, key_size)) {
+		LOGE("Error while reading %s", cert_path);
+		return false;
 	}
 	tls_key[key_size] = '\0';
 
-	success = true;
-cleanup:
-	if (cert_file)
-		fclose(cert_file);
-	if (key_file)
-		fclose(key_file);
-	return success;
+	return false;
 }
 
 static bool all16_eq_byte_scalar(const uint8_t *data, size_t remaining,
