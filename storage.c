@@ -76,7 +76,7 @@ static htable_index_t blob_ids_invalid_count;
 
 static blk_t mallocated_data;
 static blk_t **blob_data;
-static balloc_t *balloc_data;
+static balloc_t balloc_data;
 
 #if STATISTICS
 static uint64_t storage_rip_total;
