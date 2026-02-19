@@ -1,23 +1,23 @@
 /*
- * Copyright (C) 2025 epha-ots authors
+ * Copyright (C) 2025 adnihilum authors
  *
- * This file is part of epha-ots.
+ * This file is part of adnihilum.
  *
- * epha-ots is free software: you can redistribute it and/or modify
+ * adnihilum is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * epha-ots is distributed in the hope that it will be useful,
+ * adnihilum is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with epha-ots.  If not, see <https://www.gnu.org/licenses/>.
+ * along with adnihilum.  If not, see <https://www.gnu.org/licenses/>.
  */
 // SPDX-License-Identifier: GPL-3.0-or-later
-// epha-ots server
+// adnihilum server
 
 #include "types.h"
 #include <sys/types.h>
@@ -167,7 +167,7 @@ enum HEADER_PROFILE {
 #define _CONTENT_TYPE_HTML "text/html; charset=utf-8"
 #define _CONTENT_TYPE_CSS "text/css; charset=utf-8"
 #define _CONTENT_TYPE_JS "application/javascript; charset=utf-8"
-#define _CONTENT_TYPE_SVG "image/svg+xml"
+#define _CONTENT_TYPE_PNG "image/png"
 
 /*
  * STATIC ASSETS
@@ -188,7 +188,7 @@ enum assets_id_t {
 	ASSET_CLIENT_JS,
 	ASSET_QRCODE_JS,
 #endif
-	ASSET_FAVICON_SVG,
+	ASSET_ADNIHILUM128_PNG,
 	ASSETS_COUNT,
 };
 static uint8_t *assets_memory;
@@ -202,7 +202,7 @@ static asset_t assets[ASSETS_COUNT] = {
 	[ASSET_CLIENT_JS] = { .content_type = _CONTENT_TYPE_JS },
 	[ASSET_QRCODE_JS] = { .content_type = _CONTENT_TYPE_JS },
 #endif
-	[ASSET_FAVICON_SVG] = { .content_type = _CONTENT_TYPE_SVG }
+	[ASSET_ADNIHILUM128_PNG] = { .content_type = _CONTENT_TYPE_PNG }
 };
 
 static const char *asset_file_paths[ASSETS_COUNT] = {
@@ -219,10 +219,10 @@ static const char *asset_file_paths[ASSETS_COUNT] = {
 	[ASSET_QRCODE_JS] = "assets/qrcode.js",
 #endif
 #endif
-	[ASSET_FAVICON_SVG] = "assets/favicon.svg",
+	[ASSET_ADNIHILUM128_PNG] = "assets/adnihilum128.png",
 };
 
-#define ASSET_PATH_STRING_MAX_SIZE 15
+#define ASSET_PATH_STRING_MAX_SIZE 32
 static const char asset_paths[ASSETS_COUNT][ASSET_PATH_STRING_MAX_SIZE] = {
 #if ASSEMBLED_HTML
 	[ASSET_CLIENT_ASSEMBLED_HTML] = "/",
@@ -232,7 +232,7 @@ static const char asset_paths[ASSETS_COUNT][ASSET_PATH_STRING_MAX_SIZE] = {
 	[ASSET_CLIENT_JS] = "/client.js",
 	[ASSET_QRCODE_JS] = "/qrcode.js",
 #endif
-	[ASSET_FAVICON_SVG] = "/favicon.svg",
+	[ASSET_ADNIHILUM128_PNG] = "/adnihilum128.png",
 };
 
 /*
@@ -758,7 +758,7 @@ static enum MHD_Result ahc(void *cls, struct MHD_Connection *conn,
 				html_served_ptr[REPLACE_SIZE - 1] = ' ';
 				// NOTE: be careful
 				snprintf(html_version_ptr, REPLACE_SIZE,
-					 "%-15.15s", EPHA_VERSION);
+					 "%-15.15s", AD_NIHILUM_VERSION);
 				html_version_ptr[REPLACE_SIZE - 1] = ' ';
 			}
 			AHC_RETURN(send_response(
@@ -1045,7 +1045,7 @@ int main(int argc, char **argv)
 		else if (!strcmp(argv[i], "--http")) {
 			use_tls = false;
 		} else if (!strcmp(argv[i], "--version")) {
-			printf("epha-ots %s\n", EPHA_VERSION);
+			printf("adnihilum %s\n", AD_NIHILUM_VERSION);
 			return EXIT_SUCCESS;
 		} else if (!strcmp(argv[i], "--help")) {
 			fprintf(stderr,
@@ -1057,7 +1057,7 @@ int main(int argc, char **argv)
 	}
 
 	log_init();
-	LOG("Epha init. Version %s", EPHA_VERSION);
+	LOG("Ad Nihilum init. Version %s", AD_NIHILUM_VERSION);
 
 	storage_init(STORAGE_BLOBS_MAX);
 
@@ -1159,7 +1159,7 @@ int main(int argc, char **argv)
 		goto cleanup;
 	}
 
-	LOG("%s epha-ots server on :%u (max=%d, %.1f KiB/blob)",
+	LOG("%s adnihilum server on :%u (max=%d, %.1f KiB/blob)",
 	    use_tls ? "HTTPS" : "HTTP", port, STORAGE_BLOBS_MAX,
 	    ((float)BLOB_SIZE_MAX / 1024.0f));
 	LOG("Endpoints: POST /blob/<id>, GET /blob/<id>, GET /status");
@@ -1262,7 +1262,7 @@ cleanup:
 #endif
 
 	if (exit_code == EXIT_SUCCESS)
-		LOG("Epha exit normal.");
+		LOG("Ad Nihilum exit normal.");
 	log_close();
 	return exit_code;
 }

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.13)
-project(epha-ots VERSION 0.2.1 LANGUAGES C)
+project(adnihilum VERSION 0.2.1 LANGUAGES C)
 
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -23,7 +23,7 @@ option(DEBOUNCER "Enable per-client request debouncing" ON)
 option(SIMD_X86 "Enable x86 SIMD code paths" ON)
 option(SIMD_ARM "Enable ARM NEON code paths" OFF)
 
-set(_EPHA_BUILD_OPTIONS
+set(_AD_NIHILUM_BUILD_OPTIONS
   JS_MINIFY
   FILELOG
   SYSLOG
@@ -36,16 +36,16 @@ set(_EPHA_BUILD_OPTIONS
   SIMD_X86
   SIMD_ARM
 )
-message(STATUS "Configuring epha-ots with the following options:")
-foreach(_opt IN LISTS _EPHA_BUILD_OPTIONS)
+message(STATUS "Configuring adnihilum with the following options:")
+foreach(_opt IN LISTS _AD_NIHILUM_BUILD_OPTIONS)
   message(STATUS "  ${_opt} = ${${_opt}}")
 endforeach()
 unset(_opt)
-unset(_EPHA_BUILD_OPTIONS)
+unset(_AD_NIHILUM_BUILD_OPTIONS)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(CMAKE_C_FLAGS "-Og -g3 -pg -Wall -Wextra -fanalyzer -fsanitize=address,undefined -fno-omit-frame-pointer")
-    message(STATUS "Debug C flags: " ${CMAKE_C_FLAGS})
+  message(STATUS "Debug C flags: " ${CMAKE_C_FLAGS})
 endif()
 
 # Try pkg-config first
@@ -54,28 +54,28 @@ if (PkgConfig_FOUND)
   pkg_check_modules(MHD libmicrohttpd)
 endif()
 
-set(EPHA_GIT_BRANCH "")
-set(_EPHA_GIT_BRANCH_RESULT 1)
+set(AD_NIHILUM_GIT_BRANCH "")
+set(_AD_NIHILUM_GIT_BRANCH_RESULT 1)
 execute_process(
   COMMAND git rev-parse --abbrev-ref HEAD
-  OUTPUT_VARIABLE EPHA_GIT_BRANCH
-  RESULT_VARIABLE _EPHA_GIT_BRANCH_RESULT
+  OUTPUT_VARIABLE AD_NIHILUM_GIT_BRANCH
+  RESULT_VARIABLE _AD_NIHILUM_GIT_BRANCH_RESULT
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-if(NOT _EPHA_GIT_BRANCH_RESULT EQUAL 0)
-  set(EPHA_GIT_BRANCH "")
+if(NOT _AD_NIHILUM_GIT_BRANCH_RESULT EQUAL 0)
+  set(AD_NIHILUM_GIT_BRANCH "")
 endif()
 
-set(EPHA_VERSION_DEV_SUFFIX "")
-if(NOT EPHA_GIT_BRANCH STREQUAL "master")
-  set(EPHA_VERSION_DEV_SUFFIX "-dev")
+set(AD_NIHILUM_VERSION_DEV_SUFFIX "")
+if(NOT AD_NIHILUM_GIT_BRANCH STREQUAL "master")
+  set(AD_NIHILUM_VERSION_DEV_SUFFIX "-dev")
 endif()
 
 configure_file(version.h.in version.h @ONLY)
 
-add_executable(epha-ots server.c storage.c log.c)
-target_include_directories(epha-ots PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-target_compile_definitions(epha-ots PRIVATE
+add_executable(adnihilum server.c storage.c log.c)
+target_include_directories(adnihilum PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+target_compile_definitions(adnihilum PRIVATE
   $<$<BOOL:${JS_MINIFY}>:JS_MINIFY=1>
   $<$<BOOL:${FILELOG}>:FILELOG=1>
   $<$<BOOL:${SYSLOG}>:SYSLOG=1>
@@ -90,7 +90,7 @@ target_compile_definitions(epha-ots PRIVATE
 )
 
 if(SIMD_X86)
-  target_compile_options(epha-ots PRIVATE -mavx2)
+  target_compile_options(adnihilum PRIVATE -mavx2)
 endif()
 
 if(TRACY_ENABLE)
@@ -117,20 +117,20 @@ if(TRACY_ENABLE)
   if(UNIX AND NOT APPLE)
     target_link_libraries(tracy-client PUBLIC dl)
   endif()
-  target_link_libraries(epha-ots PRIVATE tracy-client)
-  target_compile_options(epha-ots PRIVATE -fno-omit-frame-pointer)
-  set_property(TARGET epha-ots PROPERTY LINKER_LANGUAGE CXX)
-  target_compile_definitions(epha-ots PRIVATE TRACY_ENABLE)
+  target_link_libraries(adnihilum PRIVATE tracy-client)
+  target_compile_options(adnihilum PRIVATE -fno-omit-frame-pointer)
+  set_property(TARGET adnihilum PROPERTY LINKER_LANGUAGE CXX)
+  target_compile_definitions(adnihilum PRIVATE TRACY_ENABLE)
 endif()
 
 if (MHD_FOUND)
-  target_include_directories(epha-ots PRIVATE ${MHD_INCLUDE_DIRS})
-  target_link_directories(epha-ots PRIVATE ${MHD_LIBRARY_DIRS})
-  target_link_libraries(epha-ots PRIVATE ${MHD_LIBRARIES})
+  target_include_directories(adnihilum PRIVATE ${MHD_INCLUDE_DIRS})
+  target_link_directories(adnihilum PRIVATE ${MHD_LIBRARY_DIRS})
+  target_link_libraries(adnihilum PRIVATE ${MHD_LIBRARIES})
 else()
   find_library(MHD_LIB microhttpd)
   if (NOT MHD_LIB)
     message(FATAL_ERROR "libmicrohttpd not found. Install libmicrohttpd-dev.")
   endif()
-  target_link_libraries(epha-ots PRIVATE ${MHD_LIB})
+  target_link_libraries(adnihilum PRIVATE ${MHD_LIB})
 endif()

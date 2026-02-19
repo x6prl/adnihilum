@@ -3,7 +3,7 @@ set -euo pipefail
 shopt -s nullglob
 
 PORT=8022
-REMOTE_ROOT="~/src/epha-ots"
+REMOTE_ROOT="~/src/adnihilum"
 
 usage() {
   cat <<USAGE
@@ -13,7 +13,7 @@ Copies the project sources to the remote host via scp.
 
 Options:
   -p port         SSH port to use (default: 8022)
-  -d remote_path  Remote project directory (default: ~/src/epha-ots)
+  -d remote_path  Remote project directory (default: ~/src/adnihilum)
   -h              Show this help and exit
 USAGE
   exit 1

@@ -1,6 +1,6 @@
-# epha (`epha-ots`)
+# Ad Nihilum (`adnihilum`)
 
-`epha-ots` is an in-memory, one-time secret drop box. It lets you exchange a single encrypted payload between two parties without ever writing the cleartext or ciphertext to disk. The client runs in the browser; the server is a small HTTPS daemon that stores blobs in RAM until they are retrieved once or they expire.
+`Ad Nihilum` is an in-memory, one-time secret drop box. It lets you exchange a single encrypted payload between two parties without ever writing the cleartext or ciphertext to disk. The client runs in the browser; the server is a small HTTPS daemon that stores blobs in RAM until they are retrieved once or they expire.
 
 ## Demo
 
@@ -27,10 +27,10 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j
 
 # HTTP development mode
-./build/epha-ots --http --port 9000
+./build/adnihilum --http --port 9000
 
 # HTTPS (provide your own cert/key)
-./build/epha-ots --port 8443 --cert cert.pem --key key.pem
+./build/adnihilum --port 8443 --cert cert.pem --key key.pem
 ```
 
 The client UI is served from `client.html`. You can host it statically or let the bundled server deliver it from the root endpoint.
@@ -50,8 +50,8 @@ sudo tailscale up
 # run the funnel, it will give you a link to enable the feature in your account
 sudo tailscale funnel --https=443 http://127.0.0.1:8443
 
-# run epha without TLS
-./build/epha-ots --http
+# run adnihilum without TLS
+./build/adnihilum --http
 
 ```
 
@@ -66,7 +66,7 @@ Alternatively you can use Tor onion-service. Do not pass plaintext data over the
 You can control compile-time features via CMake options.
 
 - `JS_MINIFY` (default `OFF`): use the minified JS bundle (`client.min.js`).
-- `FILELOG` (default `OFF`): write server logs to `epha.log`.
+- `FILELOG` (default `OFF`): write server logs to `adnihilum.log`.
 - `SYSLOG` (default `ON`): send logs to the system logger.
 - `TRACY_ENABLE` (default `OFF`): pull in Tracy client code and instrument the hot paths.
 - `STATISTICS` (default `OFF`): track detailed storage allocator, request, and debouncer counters (dumped to the log on shutdown). Also makes `/status` more verbose.
@@ -107,12 +107,12 @@ openssl req -x509 -newkey rsa:4096 -nodes -keyout key.pem -out cert.pem -days 36
 
 ## Android
 
-You can build epha-ots in termux. Download the latest snapshot and unpack it:
+You can build Ad Nihilum in termux. Download the latest snapshot and unpack it:
 
 ```bash
-curl -L -o epha-ots.zip https://github.com/x6prl/epha-ots/archive/refs/heads/master.zip
-unzip epha-ots.zip
-cd epha-ots-master
+curl -L -o adnihilum.zip https://github.com/x6prl/adnihilum/archive/refs/heads/master.zip
+unzip adnihilum.zip
+cd adnihilum-master
 ```
 
 Then install the build dependencies and run the helper script:
@@ -123,7 +123,7 @@ pkg install clang libmicrohttpd openssl-tool
 # generate a key and a certificate
 openssl req -x509 -newkey rsa:4096 -nodes -keyout key.pem -out cert.pem -days 365 -subj "/CN=localhost"
 # now you may run
-./epha-ots
+./adnihilum
 ```
 
 ## Protocol Overview
@@ -202,39 +202,40 @@ This project is licensed under the GNU General Public License v3.0. See `LICENSE
 **1) Threat model & trust**
 
 * **OneTimeSecret (OTS):** Browser sends plaintext over TLS; server encrypts at rest and can decrypt again on view. You must trust the server/operator not to read/log.
-* **epha-ots:** Browser generates a 32-byte random key `K`, does **AES-GCM** locally, and sends only `N || S || ct` to the server. The server never learns `K`; it can’t decrypt—**zero-knowledge** by default.
+* **Ad Nihilum:** Browser generates a 32-byte random key `K`, does **AES-GCM** locally, and sends only `N || S || ct` to the server. The server never learns `K`; it can’t decrypt—**zero-knowledge** by default.
 
 **2) Key management & identifiers**
 
 * **OTS:** Single server key (derived from instance secret) encrypts everyone’s data. Exposure of that key compromises all stored secrets.
-* **epha-ots:** Fresh, per-secret **random** `K` (256 bits). There’s no global key to steal.
+* **Ad Nihilum:** Fresh, per-secret **random** `K` (256 bits). There’s no global key to steal.
 
 **3) Cipher & integrity binding**
 
 * **OTS:** Typically AES-256-CBC with separate MAC logic in backend libraries; integrity relies on server-side handling and metadata checks.
-* **epha-ots:** **AES-GCM** with `aad="id="+ID`, so the ciphertext is **cryptographically bound to the exact ID**; any mismatch or swap (e.g., serving blob under a different path) fails authentication.
+* **Ad Nihilum:** **AES-GCM** with `aad="id="+ID`, so the ciphertext is **cryptographically bound to the exact ID**; any mismatch or swap (e.g., serving blob under a different path) fails authentication.
 
 **4) Link structure & leakage**
 
 * **OTS:** Share URL is a lookup token; the decryption key lives on the server, so the link alone lets the server (and anyone with server access) recover plaintext.
-* **epha-ots:** Share URL is `…/#<ID>/<base64url(K)>`. The **key is in the URL fragment**, which browsers do **not** send to servers over HTTP(S). Even if the path leaks to logs or a preview bot hits it, the bot can’t decrypt without the fragment.
+* **Ad Nihilum:** Share URL is `…/#<ID>/<base64url(K)>`. The **key is in the URL fragment**, which browsers do **not** send to servers over HTTP(S). Even if the path leaks to logs or a preview bot hits it, the bot can’t decrypt without the fragment.
 
 **5) Storage semantics**
 
 * **OTS:** Encrypted at rest (often in Redis) with a TTL; decrypted and destroyed on first view (server decides).
-* **epha-ots:** **RAM-only** blob store; evicted/expired or deleted immediately after first GET. No disks, no long-term traces, smaller forensic surface.
+* **Ad Nihilum:** **RAM-only** blob store; evicted/expired or deleted immediately after first GET. No disks, no long-term traces, smaller forensic surface.
 
 **6) Code surface & auditability**
 
 * **OTS:** Mature Ruby stack, multiple components; harder for a single reader to audit end-to-end.
-* **epha-ots:** Small enough to mentally model. Lower complexity → fewer hiding spots.
+* **Ad Nihilum:** Small enough to mentally model. Lower complexity -> fewer hiding spots.
 
 **7) Failure modes**
 
 * **OTS:** If server key is compromised or insiders misbehave, secrets are exposed.
-* **epha-ots:** If the server is compromised, attacker can delete or serve stale blobs, but cannot decrypt past blobs without `K`.
+* **Ad Nihilum:** If the server is compromised, attacker can delete or serve stale blobs, but cannot decrypt past blobs without `K`.
 
-### What epha-ots does **not** protect against
+<a id="what-adnihilum-does-not-protect-against"></a>
+### What Ad Nihilum does **not** protect against
 
 * **SWAPing:** The maximum size that may be locked into memory is very small by default for unprivileged users. Running the server by yourself you are responsible for possible swapping of the storage. Please refer to `storage_init` function in `storage.c` and `LOCK_MEMORY_TO_RAM` feature, that is OFF by default.
 * **Malicious front-end code:** If the served HTML/JS is modified (server compromise, CDN injection, extension injecting scripts), it can read `location.hash` and exfiltrate `K` before/after decryption. Fragment secrecy helps only if the JS is honest.

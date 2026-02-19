@@ -115,7 +115,7 @@ body::after {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1rem 1.75rem;
+    padding: 0.3rem 1.4rem;
     position: relative;
 }
 
@@ -125,22 +125,8 @@ body::after {
     gap: 0.75rem;
 }
 
-.icon-circle {
-    width: 44px;
-    height: 44px;
-    border-radius: 16px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(14, 165, 233, 0.12);
-    color: var(--primary-600);
-    box-shadow: inset 0 0 0 1px rgba(14, 165, 233, 0.15);
-}
-
-.icon-circle.secondary {
-    background: rgba(217, 70, 239, 0.14);
-    color: var(--secondary-600);
-    box-shadow: inset 0 0 0 1px rgba(217, 70, 239, 0.15);
+.nav-brand > img {
+    display: block;
 }
 
 .brand-name {
