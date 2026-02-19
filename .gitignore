@@ -1,6 +1,7 @@
 build/*
 *.pem
 .vscode
+.cache
 assets/sodium.js
 assets/*.min.js
 epha.log
