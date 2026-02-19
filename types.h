@@ -30,7 +30,7 @@ static inline uint64_t ilog2_u64(blk_size_t i)
 }
 
 typedef struct blk_t {
-	void *data;
+	uint8_t *data;
 	blk_size_t size;
 } blk_t;
 

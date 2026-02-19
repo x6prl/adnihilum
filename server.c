@@ -19,6 +19,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // epha-ots server
 
+#include "types.h"
 #include <sys/types.h>
 #define _GNU_SOURCE
 #include <microhttpd.h>
@@ -606,8 +607,8 @@ static enum MHD_Result send_text(struct MHD_Connection *c, unsigned code,
 }
 
 typedef struct req_ctx_t {
-	blk_t *post_body; // allocation that receives an in-flight POST body
-	blk_t *blob_send; // blob fetched for GET replies; freed after send
+	blk_t post_body; // allocation that receives an in-flight POST body
+	blk_t blob_send; // blob fetched for GET replies; freed after send
 	blk_size_t expected; // advertised Content-Length for the current POST
 	blk_size_t read; // bytes already written into post_body->data
 	htable_key_t id; // blob identifier associated with this request
@@ -816,15 +817,15 @@ static enum MHD_Result ahc(void *cls, struct MHD_Connection *conn,
 		}
 		if (is_get) {
 			// GET /blob/*
-			blk_t *blob = storage_blob_get(id);
-			if (!blob) {
+			blk_t blob = storage_blob_get(id);
+			if (!blob.size) {
 				LOGD("%s Not found!\n", url);
 				AHC_RETURN(send_text(conn, MHD_HTTP_NOT_FOUND,
 						     "Not Found"));
 			}
 			ctx->blob_send = blob;
 			AHC_RETURN(send_response(
-				conn, MHD_HTTP_OK, blob->data, blob->size,
+				conn, MHD_HTTP_OK, blob.data, blob.size,
 				"application/octet-stream",
 				MHD_RESPMEM_PERSISTENT, HP_API_BLOB));
 		} else if (0 == strncmp(method, "POST", 5)) {
@@ -900,7 +901,7 @@ static enum MHD_Result ahc(void *cls, struct MHD_Connection *conn,
 				     (unsigned long long)ctx->read, incoming,
 				     (double)incoming / 1024.0);
 
-				if (!ctx->post_body) {
+				if (!ctx->post_body.size) {
 					// storage CREATE
 					if (storage_blob_is_already_taken(
 						    ctx->id)) {
@@ -916,7 +917,7 @@ static enum MHD_Result ahc(void *cls, struct MHD_Connection *conn,
 					ctx->post_body = storage_blob_create(
 						ctx->id, ctx->expected,
 						valid_until);
-					if (!ctx->post_body) {
+					if (!ctx->post_body.size) {
 						LOGD("%s cannot get the chunk for the blob!\n",
 						     url);
 						AHC_RETURN(send_text(
@@ -926,13 +927,14 @@ static enum MHD_Result ahc(void *cls, struct MHD_Connection *conn,
 					}
 				}
 				if (ctx->read + incoming >
-				    ctx->post_body->size) {
+				    ctx->post_body.size) {
 					blk_size_t remaining =
-						ctx->post_body->size -
-						ctx->read;
+						ctx->post_body.size - ctx->read;
 					LOGD("%s payload overflow: read=%llu incoming=%zu size=%llu\n",
-					     url, (unsigned long long)ctx->read, incoming,
-					     (unsigned long long)ctx->post_body->size);
+					     url, (unsigned long long)ctx->read,
+					     incoming,
+					     (unsigned long long)
+						     ctx->post_body.size);
 					if (remaining == 0) {
 						*upload_data_size = 0;
 						AHC_RETURN(send_text(
@@ -942,7 +944,7 @@ static enum MHD_Result ahc(void *cls, struct MHD_Connection *conn,
 					}
 					incoming = remaining;
 				}
-				memcpy(ctx->post_body->data + ctx->read,
+				memcpy(ctx->post_body.data + ctx->read,
 				       upload_data, incoming);
 				*upload_data_size = 0;
 				ctx->read += incoming;
@@ -950,17 +952,18 @@ static enum MHD_Result ahc(void *cls, struct MHD_Connection *conn,
 			}
 			// and when it is nothing to read
 			else {
-				if (!ctx->post_body ||
+				if (!ctx->post_body.size ||
 				    ctx->read != ctx->expected) {
 					LOGD("%s bad blob!\n", url);
 					if (ctx->have_id) {
-						blk_t *bad_blob =
+						blk_t bad_blob =
 							storage_blob_get(
 								ctx->id);
-						if (bad_blob) {
+						if (bad_blob.size) {
 							storage_blob_free(
 								bad_blob);
-							ctx->post_body = NULL;
+							ctx->post_body =
+								(blk_t){ 0 };
 						}
 					}
 					AHC_RETURN(send_text(
@@ -991,10 +994,10 @@ static void req_done(void *cls, struct MHD_Connection *c, void **con_cls,
 	(void)toe;
 	if (*con_cls) {
 		struct req_ctx_t *ctx = (struct req_ctx_t *)(*con_cls);
-		ctx->post_body = NULL;
-		if (ctx->blob_send) {
+		ctx->post_body = (blk_t){ 0 };
+		if (ctx->blob_send.size) {
 			storage_blob_free(ctx->blob_send);
-			ctx->blob_send = NULL;
+			ctx->blob_send = (blk_t){ 0 };
 		}
 		secure_zero(ctx->id.bytes, sizeof(ctx->id.bytes));
 #if STATISTICS

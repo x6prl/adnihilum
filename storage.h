@@ -42,13 +42,13 @@ void secure_zero(void *p, size_t n);
 
 void storage_init(htable_index_t htable_size);
 void storage_zero();
-blk_t *storage_blob_create(htable_key_t id, blk_size_t size,
+blk_t storage_blob_create(htable_key_t id, blk_size_t size,
 			   monotonic_time_t valid_until);
 bool storage_blob_is_already_taken(htable_key_t id);
 // the caller becomes the owner
 // and must call storage_blob_free after reading
-blk_t *storage_blob_get(htable_key_t id);
-void storage_blob_free(blk_t *blob);
+blk_t storage_blob_get(htable_key_t id);
+void storage_blob_free(blk_t blob);
 
 typedef struct storage_status_t storage_status_t;
 storage_status_t storage_status();

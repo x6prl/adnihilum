@@ -55,13 +55,13 @@ typedef struct balloc_t balloc_t;
 // calculate the memory needed
 static blk_size_t bfootprint();
 // provide ZEROED memory
-static balloc_t binit(void *memory, blk_size_t memory_size);
+static balloc_t binit(uint8_t *memory, blk_size_t memory_size);
 
 // size must never be 0 or 1
 static inline bindex_t bindex(blk_size_t size);
 
-static inline blk_t *balloc(balloc_t ba, blk_size_t size);
-static inline void bfree(balloc_t ba, blk_t *blk);
+static inline blk_t balloc(balloc_t ba, blk_size_t size);
+static inline void bfree(balloc_t ba, blk_t blk);
 
 // the size of a bucket
 static inline size_t bbucket_capacity(bindex_t index);
@@ -83,8 +83,8 @@ static struct {
 #endif
 
 typedef struct __attribute__((aligned(16))) bucket_t {
-	blk_t *next_free;
-	blk_t *blk;
+	uint8_t *next_free;
+	blk_t blk;
 	uint32_t free;
 } bucket_t;
 
@@ -112,55 +112,44 @@ static inline blk_size_t bfootprint()
 	static_assert(sizeof(bucket_t) % 16 == 0,
 		      "bucket_t must be aligned 16");
 	static_assert(sizeof(blk_t) % 16 == 0, "blk_t must be aligned 16");
-	blk_size_t footprint =
-		(sizeof(bucket_t) + sizeof(blk_t)) * BUCKETS_COUNT;
+	blk_size_t footprint = sizeof(bucket_t) * BUCKETS_COUNT;
 	for (size_t i = 0; i < BUCKETS_COUNT; ++i) {
 		const unsigned count = bbucket_capacity(i);
-		const unsigned payload_size = bbucket_item_size_max(i);
-		const unsigned block_size = sizeof(blk_t) + payload_size;
-		footprint += count * block_size;
+		const unsigned item_size = bbucket_item_size_max(i);
+		footprint += count * item_size;
 	}
 	return footprint;
 }
 
-static inline balloc_t binit(void *memory, blk_size_t memory_size)
+static inline balloc_t binit(uint8_t *memory, blk_size_t memory_size)
 {
 	blk_size_t buckets_data_size = sizeof(bucket_t) * BUCKETS_COUNT;
 	// buckets go last
-	void *ptr = memory + memory_size - buckets_data_size;
+	uint8_t *ptr = memory + memory_size - buckets_data_size;
 	bucket_t *buckets = (bucket_t *)ptr;
 	ptr += buckets_data_size;
-	balloc_t ba = {0};
+	balloc_t ba = { 0 };
 	ba.buckets = buckets;
 
 	// actual data go first
 	ptr = memory;
 	for (size_t i = 0; i < BUCKETS_COUNT; ++i) {
-		ptr += sizeof(bucket_t);
-		buckets[i].blk = (blk_t *)(ptr);
-		ptr += sizeof(blk_t);
-		buckets[i].blk->data = (blk_t *)(ptr);
-		void *arena = buckets[i].blk->data;
-
 		const unsigned count = bbucket_capacity(i);
 		buckets[i].free = count;
-		const unsigned payload_size = bbucket_item_size_max(i);
-		const unsigned block_size = sizeof(blk_t) + payload_size;
-		buckets[i].blk->size = count * block_size;
+		const unsigned item_size = bbucket_item_size_max(i);
+		buckets[i].blk =
+			(blk_t){ .data = ptr, .size = count * item_size };
 
-		void *arena_last = (arena + (count - 1) * block_size);
-		blk_t *chunk = NULL;
-		blk_t *previous = NULL;
-		for (; arena <= arena_last; arena += block_size) {
-			chunk = (blk_t *)(arena);
-			chunk->data = (blk_t *)(arena + sizeof(blk_t));
-			chunk->size = payload_size;
-			// reuse data pointer to link freelist nodes while free
-			chunk->data = (uint8_t *)previous;
-			previous = chunk;
+		uint8_t *arena_last = (ptr + (count - 1) * item_size);
+		uint8_t *previous = NULL;
+		for (uint8_t *current_item = ptr; current_item <= arena_last;
+		     current_item += item_size) {
+			uint8_t **next_item = (uint8_t **)(current_item);
+			(*next_item) = previous;
+			previous = current_item;
 		}
-		buckets[i].next_free = chunk;
-		ptr += block_size * count;
+		buckets[i].next_free = previous;
+		ptr += item_size * count;
 	}
 	return ba;
 }
@@ -175,17 +164,15 @@ static inline bindex_t bindex(blk_size_t size)
 	return index & mask;
 }
 
-static inline blk_t *balloc(balloc_t ba, blk_size_t size)
+static inline blk_t balloc(balloc_t ba, blk_size_t size)
 {
 	const bindex_t i = bindex(size);
 	LOGD("of size %llu from bucket[%llu], free %u\n",
 	     (unsigned long long)size, (unsigned long long)i,
 	     ba.buckets[i].free);
 	if (ba.buckets[i].free) {
-		blk_t *ret = ba.buckets[i].next_free;
-		ba.buckets[i].next_free = (blk_t *)ret->data;
-		ret->data = (uint8_t *)ret + sizeof(blk_t);
-		ret->size = size;
+		blk_t ret = { .data = ba.buckets[i].next_free, .size = size };
+		ba.buckets[i].next_free = *(uint8_t **)(ret.data);
 		ba.buckets[i].free--;
 #if STATISTICS
 		balloc_statistics.try_allocs[i]++;
@@ -202,17 +189,16 @@ static inline blk_t *balloc(balloc_t ba, blk_size_t size)
 		balloc_statistics.try_allocs[i]++;
 		balloc_statistics.no_space_errors_count[i]++;
 #endif
-		return NULL;
+		return (blk_t){ 0 };
 	}
 }
 
-static inline void bfree(balloc_t ba, blk_t *blk)
+static inline void bfree(balloc_t ba, blk_t blk)
 {
-	const bindex_t i = bindex(blk->size);
-	LOGD("of size %llu to bucket[%llu]\n", (unsigned long long)blk->size,
-	     (unsigned long long)i);
+	const bindex_t i = bindex(blk.size);
+	LOGD("of size %lu to bucket[%lu]\n", blk.size, i);
 	// stash next pointer in data field before returning to pool
-	blk->data = (uint8_t *)(ba.buckets[i].next_free);
-	ba.buckets[i].next_free = blk;
+	*(uint8_t **)(blk.data) = ba.buckets[i].next_free;
+	ba.buckets[i].next_free = blk.data;
 	ba.buckets[i].free++;
 }

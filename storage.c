@@ -20,6 +20,7 @@
 
 #include "storage.h"
 
+#include "types.h"
 #include <stdint.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -75,7 +76,7 @@ static htable_key_t *blob_ids_invalid;
 static htable_index_t blob_ids_invalid_count;
 
 static blk_t mallocated_data;
-static blk_t **blob_data;
+static blk_t *blob_data;
 static balloc_t balloc_data;
 
 #if STATISTICS
@@ -117,7 +118,7 @@ static void htable_swap(htable_index_t a, htable_index_t b)
 		blob_ids[b] = tmp;
 	}
 	{
-		blk_t *tmp = blob_data[a];
+		blk_t tmp = blob_data[a];
 		blob_data[a] = blob_data[b];
 		blob_data[b] = tmp;
 	}
@@ -191,7 +192,8 @@ void storage_init(htable_index_t _htable_size)
 				  blob_data_byte_size + buckets_data_byte_size;
 
 	const size_t alignment = sizeof(htable_key_t);
-	if (0 != posix_memalign(&mallocated_data.data, alignment, size_total)) {
+	if (0 != posix_memalign((void *)&mallocated_data.data, alignment,
+				size_total)) {
 		LOGE("Cannot allocate aligned memory (%.2fMiB)",
 		     size_total / 1024.0 / 1024.0);
 		exit(EXIT_FAILURE);
@@ -211,7 +213,7 @@ void storage_init(htable_index_t _htable_size)
 
 	htable_free = htable_size = _htable_size;
 
-	blob_ids_invalid = mallocated_data.data;
+	blob_ids_invalid = (htable_key_t *)mallocated_data.data;
 	blob_ids = (void *)blob_ids_invalid + ids_invalid_byte_size;
 	blob_valid_until = (void *)blob_ids + ids_byte_size;
 	blob_data = (void *)blob_valid_until + blob_valid_until_byte_size;
@@ -293,23 +295,23 @@ void storage_zero()
 	STORAGE_ZONE_END(free_zone);
 }
 
-blk_t *storage_blob_create(htable_key_t id, blk_size_t size,
-			   monotonic_time_t valid_until)
+blk_t storage_blob_create(htable_key_t id, blk_size_t size,
+			  monotonic_time_t valid_until)
 {
 	STORAGE_ZONE(create_zone, "storage_blob_create");
 	if (key_is_null(id)) {
 		LOGE("cannot create for null key");
-		STORAGE_RETURN(create_zone, NULL);
+		STORAGE_RETURN(create_zone, (blk_t){ 0 });
 	}
 	htable_index_t index;
 	if (!htable_find_free_slot(id, size, &index)) {
 		LOGE("no free indices in hash table");
-		STORAGE_RETURN(create_zone, NULL);
+		STORAGE_RETURN(create_zone, (blk_t){ 0 });
 	}
-	blk_t *blk = balloc(balloc_data, size);
-	if (!blk) {
+	blk_t blk = balloc(balloc_data, size);
+	if (blk.size < size) {
 		LOGE("cannot allocate %lu bytes", size);
-		STORAGE_RETURN(create_zone, NULL);
+		STORAGE_RETURN(create_zone, (blk_t){ 0 });
 	}
 
 	blob_ids[index] = id;
@@ -329,29 +331,28 @@ bool storage_blob_is_already_taken(htable_key_t id)
 	return taken;
 }
 
-blk_t *storage_blob_get(htable_key_t id)
+blk_t storage_blob_get(htable_key_t id)
 {
 	STORAGE_ZONE(get_zone, "storage_blob_get");
 	size_t index;
 	if (htable_get_blob_index(id, &index)) {
-		blk_t *ret = blob_data[index];
-		LOGD("index %llu, of %llu\n", (unsigned long long)index,
-		     (unsigned long long)ret->size);
+		blk_t ret = blob_data[index];
+		LOGD("index %lu, of %lu\n", index, ret.size);
 		index = htable_erase_slot(index);
 		secure_zero(blob_ids[index].bytes, 16);
 		blob_valid_until[index] = VALID_UNTIL_EMPTY;
 		htable_free += 1;
 		STORAGE_RETURN(get_zone, ret);
 	} else {
-		STORAGE_RETURN(get_zone, NULL);
+		STORAGE_RETURN(get_zone, (blk_t){ 0 });
 	}
 }
 
-void storage_blob_free(blk_t *block)
+void storage_blob_free(blk_t block)
 {
 	STORAGE_ZONE(free_blob_zone, "storage_blob_free");
 	LOGD("_\n");
-	secure_zero(block->data, block->size);
+	secure_zero(block.data, block.size);
 	bfree(balloc_data, block);
 	STORAGE_ZONE_END(free_blob_zone);
 }
@@ -419,8 +420,8 @@ void storage_reaper()
 
 	STORAGE_ZONE(reaper_rip_zone, "storage_rip");
 	for (htable_index_t i = 0; i < blob_ids_invalid_count; ++i) {
-		blk_t *block = storage_blob_get(blob_ids_invalid[i]);
-		if (!block) {
+		blk_t block = storage_blob_get(blob_ids_invalid[i]);
+		if (!block.size || !block.data) {
 			unreachable();
 		}
 		storage_blob_free(block);
