@@ -618,9 +618,9 @@ typedef struct req_ctx_t {
 #endif
 } req_ctx_t;
 
-#include "flalloc.h"
+#include "ctxalloc.h"
 
-static flalloc_t *req_flalloc;
+static ctxalloc_t *req_ctxalloc;
 
 // Main application handler invoked by libmicrohttpd for each HTTP exchange.
 // Handles rate limiting, static asset serving, blob POST/GET, and health
@@ -674,7 +674,7 @@ static enum MHD_Result ahc(void *cls, struct MHD_Connection *conn,
 #ifdef TRACY_ENABLE
 		TracyCZoneN(req_ctx_alloc_zone, "req_ctx_alloc", 1);
 #endif
-		ctx = flaalloc(req_flalloc);
+		ctx = ctxa_alloc(req_ctxalloc);
 #ifdef TRACY_ENABLE
 		TracyCZoneEnd(req_ctx_alloc_zone);
 #endif
@@ -1014,7 +1014,7 @@ static void req_done(void *cls, struct MHD_Connection *c, void **con_cls,
 			statistics.req_ctx_alive_current -= 1;
 		}
 #endif
-		flafree(req_flalloc, ctx);
+		ctxa_free(req_ctxalloc, ctx);
 		*con_cls = NULL;
 	}
 #ifdef TRACY_ENABLE
@@ -1065,7 +1065,7 @@ int main(int argc, char **argv)
 
 	struct MHD_Daemon *d = NULL;
 	void *req_ctx_memory = NULL;
-	flalloc_size_t req_ctx_memory_size = 0;
+	ctxalloc_size_t req_ctx_memory_size = 0;
 	int exit_code = EXIT_FAILURE;
 	int efd = -1;
 	int reaper_tfd = -1;
@@ -1105,14 +1105,14 @@ int main(int argc, char **argv)
 		LOGE("Cannot find the point of version setting in HTML.");
 	}
 
-	req_ctx_memory_size = flafootprint(REQUESTS_MAX);
+	req_ctx_memory_size = ctxa_footprint(REQUESTS_MAX);
 	req_ctx_memory = malloc(req_ctx_memory_size);
 	if (!req_ctx_memory) {
 		LOGE("Failed to allocate %.2f KiB of memory for requests.",
 		     (float)req_ctx_memory_size / 1024.f);
 		goto cleanup;
 	}
-	req_flalloc = flainit(req_ctx_memory, REQUESTS_MAX);
+	req_ctxalloc = ctxa_init(req_ctx_memory, REQUESTS_MAX);
 
 	statistics.start_time = monotonic_now_s();
 

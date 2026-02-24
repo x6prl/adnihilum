@@ -32,48 +32,48 @@
  * ====================================================================== 
  */
 
-typedef uint32_t flalloc_size_t;
-typedef union flalloc_block_t flalloc_block_t;
-typedef struct flalloc_t flalloc_t;
+typedef uint32_t ctxalloc_size_t;
+typedef union ctxalloc_block_t ctxalloc_block_t;
+typedef struct ctxalloc_t ctxalloc_t;
 
-static inline flalloc_size_t flafootprint(flalloc_size_t count);
-static inline flalloc_t *flainit(void *memory, flalloc_size_t count);
-static inline req_ctx_t *flaalloc(flalloc_t *alloc);
-static inline void flafree(flalloc_t *alloc, void *ptr);
+static inline ctxalloc_size_t ctxa_footprint(ctxalloc_size_t count);
+static inline ctxalloc_t *ctxa_init(void *memory, ctxalloc_size_t count);
+static inline req_ctx_t *ctxa_alloc(ctxalloc_t *alloc);
+static inline void ctxa_free(ctxalloc_t *alloc, void *ptr);
 
 /*
  * ====================================================================== 
  */
 
-union flalloc_block_t {
-	flalloc_block_t *next;
+union ctxalloc_block_t {
+	ctxalloc_block_t *next;
 	req_ctx_t req_ctx;
 };
 
-struct flalloc_t {
-	flalloc_block_t *free_list;
-	flalloc_size_t capacity;
-	flalloc_size_t available;
+struct ctxalloc_t {
+	ctxalloc_block_t *free_list;
+	ctxalloc_size_t capacity;
+	ctxalloc_size_t available;
 };
 
-static inline flalloc_size_t flafootprint(flalloc_size_t count)
+static inline ctxalloc_size_t ctxa_footprint(ctxalloc_size_t count)
 {
-	return count * sizeof(flalloc_block_t) + sizeof(flalloc_t);
+	return count * sizeof(ctxalloc_block_t) + sizeof(ctxalloc_t);
 }
 
-static inline flalloc_t *flainit(void *memory, flalloc_size_t count)
+static inline ctxalloc_t *ctxa_init(void *memory, ctxalloc_size_t count)
 {
-	flalloc_size_t footprint = flafootprint(count);
-	flalloc_t *alloc =
-		(flalloc_t *)(memory + footprint - sizeof(flalloc_t));
+	ctxalloc_size_t footprint = ctxa_footprint(count);
+	ctxalloc_t *alloc =
+		(ctxalloc_t *)(memory + footprint - sizeof(ctxalloc_t));
 
 	alloc->capacity = count;
 	alloc->available = count;
 	alloc->free_list = NULL;
 
-	flalloc_block_t *pool = memory;
+	ctxalloc_block_t *pool = memory;
 	alloc->free_list = pool;
-	for (flalloc_size_t i = 0; i < count - 1; ++i) {
+	for (ctxalloc_size_t i = 0; i < count - 1; ++i) {
 		pool[i].next = &pool[i + 1];
 	}
 	pool[count - 1].next = NULL;
@@ -81,9 +81,9 @@ static inline flalloc_t *flainit(void *memory, flalloc_size_t count)
 	return alloc;
 }
 
-static inline req_ctx_t *flaalloc(flalloc_t *alloc)
+static inline req_ctx_t *ctxa_alloc(ctxalloc_t *alloc)
 {
-	flalloc_block_t *block = alloc->free_list;
+	ctxalloc_block_t *block = alloc->free_list;
 	if (!block) {
 		return NULL;
 	}
@@ -94,9 +94,9 @@ static inline req_ctx_t *flaalloc(flalloc_t *alloc)
 	return &(block->req_ctx);
 }
 
-static inline void flafree(flalloc_t *alloc, void *ptr)
+static inline void ctxa_free(ctxalloc_t *alloc, void *ptr)
 {
-	flalloc_block_t *block = (flalloc_block_t *)ptr;
+	ctxalloc_block_t *block = (ctxalloc_block_t *)ptr;
 	block->next = alloc->free_list;
 	alloc->free_list = block;
 	alloc->available += 1;
