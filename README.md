@@ -222,15 +222,15 @@ This project is licensed under the GNU General Public License v3.0. See `LICENSE
 <a id="what-adnihilum-does-not-protect-against"></a>
 ### What Ad Nihilum does **not** protect against
 
-* **SWAPing:** The maximum size that may be locked into memory is very small by default for unprivileged users. Running the server by yourself you are responsible for possible swapping of the storage. Please refer to `storage_init` function in `storage.c` and `LOCK_MEMORY_TO_RAM` feature, that is OFF by default.
-* **Malicious front-end code:** If the served HTML/JS is modified (server compromise, CDN injection, extension injecting scripts), it can read `location.hash` and exfiltrate `K` before/after decryption. Fragment secrecy helps only if the JS is honest.
-* **Host/device compromise:** Keyloggers, clipboard snoopers, screen grabbers, MDM/AV hooks, corporate proxies, or a rooted/jailbroken phone will see plaintext or the fragment key.
-* **Browser extensions & injected content:** Over-permissive extensions can access page DOM and the URL fragment; some “productivity” extensions phone home.
 * **Side channels & metadata:** Adversaries can learn **that** a secret was exchanged, when, and its approximate size (ciphertext length) from traffic patterns or logs. Also IP metadata.
 * **Post-decrypt mishandling:** Once the recipient’s browser shows plaintext, anything they copy/download/store (or their autosave/history/snapshots) is out of scope.
-* **Protocol downgrade / misconfig:** Serving the client over HTTP or allowing old TLS ciphersuites invites active MitM before encryption happens client-side.
+* **Browser extensions & injected content:** Over-permissive extensions can access page DOM and the URL fragment; some “productivity” extensions phone home.
+* **Rendering in hostile containers:** In-app browsers (e. g. in Telegram) may inject code.
+* **Malicious front-end code:** If the served HTML/JS is modified (server compromise, CDN injection, extension injecting scripts), it can read `location.hash` and exfiltrate `K` before/after decryption. Fragment secrecy helps only if the JS is honest.
+* **Host/device compromise:** Keyloggers, clipboard snoopers, screen grabbers, MDM/AV hooks, corporate proxies, or a rooted/jailbroken phone will see plaintext or the fragment key.
 * **Visibility to local network/middleboxes:** Even with TLS, some enterprise TLS interception boxes (installed root CAs) can see all traffic and hence the page+JS (and thus the fragment).
-* **Rendering in hostile containers:** In-app browsers (messengers) may inject code; they also love link-previews → DoS.
+* **Protocol downgrade / misconfig:** Serving the client over HTTP or allowing old TLS ciphersuites invites active MitM before encryption happens client-side.
+* **SWAPing:** The maximum size that may be locked into memory is very small by default for unprivileged users. Running the server by yourself you are responsible for possible swapping of the storage. Please refer to `storage_init` function in `storage.c` and `LOCK_MEMORY_TO_RAM` feature, that is OFF by default.
 
 ---
 
