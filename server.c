@@ -397,7 +397,7 @@ bool tls_data_load(const char *cert_path, const char *key_path)
 	}
 	tls_key[key_size] = '\0';
 
-	return false;
+	return true;
 }
 
 static bool all16_eq_byte_scalar(const uint8_t *data, size_t remaining,
