@@ -115,10 +115,15 @@ unzip adnihilum.zip
 cd adnihilum-master
 ```
 
-Then install the build dependencies and run the helper script:
+### Dependencies
 
 ```bash
 pkg install clang libmicrohttpd openssl-tool
+```
+
+### Building and Running
+
+```bash
 ./tools/build_android.sh
 # generate a key and a certificate
 openssl req -x509 -newkey rsa:4096 -nodes -keyout key.pem -out cert.pem -days 365 -subj "/CN=localhost"
