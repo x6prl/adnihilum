@@ -55,9 +55,9 @@ const STATUS_ICON_PATHS = {
 	success:
 		'<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/>',
 	error: '<path d="M12 7v7" stroke-linecap="round" stroke-linejoin="round"/>' +
-		       '<path d="M12 17h.01" stroke-linecap="round" stroke-linejoin="round"/>',
+		'<path d="M12 17h.01" stroke-linecap="round" stroke-linejoin="round"/>',
 	info: '<path d="M12 8h.01" stroke-linecap="round" stroke-linejoin="round"/>' +
-		      '<path d="M11 12h1v4h1" stroke-linecap="round" stroke-linejoin="round"/>'
+		'<path d="M11 12h1v4h1" stroke-linecap="round" stroke-linejoin="round"/>'
 };
 const isMacLike = (() => {
 	if (typeof navigator === 'undefined')
@@ -66,20 +66,18 @@ const isMacLike = (() => {
 	return /(Mac|iPhone|iPad|iPod)/i.test(id);
 })();
 
-function normalizeOrigin(origin)
-{
+function normalizeOrigin(origin) {
 	return origin.replace(/\/+$/, '');
 }
 
-function clearLocationHash()
-{
+function clearLocationHash() {
 	if (typeof window === 'undefined')
 		return;
 	try {
 		if (typeof history !== 'undefined' &&
-		    typeof history.replaceState === 'function') {
+			typeof history.replaceState === 'function') {
 			const path = window.location.pathname +
-				     window.location.search;
+				window.location.search;
 			history.replaceState(null, '', path);
 		} else {
 			window.location.hash = '';
@@ -89,15 +87,14 @@ function clearLocationHash()
 	}
 }
 
-function setStatus(msg, ok = false)
-{
+function setStatus(msg, ok = false) {
 	const wrap = $('statusNotification');
 	const message = $('statusMessage');
 	const subtitle = $('heroSubtitle');
 	const iconHolder = $('statusIcon');
 	const iconSvg =
 		iconHolder ? iconHolder.querySelector('.status-icon-graphic') :
-			     null;
+			null;
 	const progress = $('progressBar');
 
 	if (!msg) {
@@ -117,7 +114,7 @@ function setStatus(msg, ok = false)
 
 	const iconKey = ok ? 'success' : 'error';
 	iconSvg.innerHTML = STATUS_ICON_PATHS[iconKey] ||
-			    STATUS_ICON_PATHS.info || '';
+		STATUS_ICON_PATHS.info || '';
 
 	progress.style.transition = 'none';
 	progress.style.width = '0%';
@@ -126,8 +123,7 @@ function setStatus(msg, ok = false)
 	progress.style.width = '100%';
 }
 
-function clearPendingSecret()
-{
+function clearPendingSecret() {
 	const pending = state.pendingSecret;
 	if (!pending)
 		return;
@@ -140,8 +136,7 @@ function clearPendingSecret()
 	state.pendingSecret = null;
 }
 
-function setDecryptionCardVisible(visible)
-{
+function setDecryptionCardVisible(visible) {
 	const deCard = $('decryptionCard');
 	const enCard = $('encryptionCard');
 	if (visible) {
@@ -156,8 +151,7 @@ function setDecryptionCardVisible(visible)
 	}
 }
 
-function lockTextarea(lock)
-{
+function lockTextarea(lock) {
 	const textField = $('text');
 	if (state.originalPlaceholder === null) {
 		const initial = textField.getAttribute('placeholder');
@@ -186,8 +180,7 @@ function lockTextarea(lock)
 	textField.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
-function cloneBytes(view)
-{
+function cloneBytes(view) {
 	if (!(view instanceof Uint8Array))
 		return null;
 	const copy = new Uint8Array(view.length);
@@ -195,24 +188,21 @@ function cloneBytes(view)
 	return copy;
 }
 
-function bytesToHex(bytes)
-{
+function bytesToHex(bytes) {
 	let out = '';
 	for (let i = 0; i < bytes.length; i++)
 		out += bytes[i].toString(16).padStart(2, '0');
 	return out;
 }
 
-function equal16B(a, b)
-{
+function equal16B(a, b) {
 	const wa = new Uint32Array(a.buffer, a.byteOffset, 4);
 	const wb = new Uint32Array(b.buffer, b.byteOffset, 4);
 	return !((wa[0] ^ wb[0]) | (wa[1] ^ wb[1]) | (wa[2] ^ wb[2]) |
-		 (wa[3] ^ wb[3]));
+		(wa[3] ^ wb[3]));
 }
 
-function updateQr()
-{
+function updateQr() {
 	const wrap = $('qrWrap');
 	const container = $('qrCode');
 	if (!wrap || !container)
@@ -238,8 +228,8 @@ function updateQr()
 				colorDark: '#000000',
 				colorLight: '#ffffff',
 				correctLevel: QRCODE_CORRECT_LEVEL == 0 ?
-						      QRCode.CorrectLevel.L :
-						      QRCode.CorrectLevel.H,
+					QRCode.CorrectLevel.L :
+					QRCode.CorrectLevel.H,
 			});
 		} else if (typeof qrInstance.clear === 'function') {
 			qrInstance.clear();
@@ -261,8 +251,7 @@ function updateQr()
 	}
 }
 
-function setLink(origin, id, bK)
-{
+function setLink(origin, id, bK) {
 	const wrap = $('generatedWrap');
 	const input = $('generatedUrl');
 	const copyBtn = $('btnCopyLink');
@@ -338,12 +327,11 @@ function setLink(origin, id, bK)
 	updateQr();
 }
 
-function getOrigin()
-{
+function getOrigin() {
 	const el = $('host');
 	const raw = (el.value.length > 6 ? el.value :
-					   'https://local.tanuki-gecko.ts.net')
-			    .trim();
+		'https://local.tanuki-gecko.ts.net')
+		.trim();
 	if (!raw)
 		throw new Error('Service origin is empty');
 	let parsed;
@@ -356,13 +344,13 @@ function getOrigin()
 		throw new Error('Origin must not include credentials');
 	}
 	if ((parsed.pathname && parsed.pathname !== '/') || parsed.search ||
-	    parsed.hash) {
+		parsed.hash) {
 		throw new Error(
 			'Origin must not include path, query, or fragment');
 	}
 	const isLocal = parsed.hostname === 'localhost' ||
-			parsed.hostname === '127.0.0.1' ||
-			parsed.hostname === '::1';
+		parsed.hostname === '127.0.0.1' ||
+		parsed.hostname === '::1';
 	if (parsed.protocol !== 'https:' && !isLocal) {
 		throw new Error('Service origin must use https://');
 	}
@@ -373,8 +361,7 @@ function getOrigin()
 	return origin;
 }
 
-function base64UrlEncode(bytes)
-{
+function base64UrlEncode(bytes) {
 	if (!(bytes instanceof Uint8Array))
 		throw new TypeError('Expected Uint8Array');
 	let bin = '';
@@ -386,8 +373,7 @@ function base64UrlEncode(bytes)
 		.replace(/=+$/g, '');
 }
 
-function base64UrlDecode(str)
-{
+function base64UrlDecode(str) {
 	try {
 		const normalized = str.replace(/-/g, '+').replace(/_/g, '/');
 		const pad = normalized.length % 4;
@@ -402,22 +388,20 @@ function base64UrlDecode(str)
 	}
 }
 
-async function deriveIdFromKeyAndSalt(keyBytes, saltBytes)
-{
+async function deriveIdFromKeyAndSalt(keyBytes, saltBytes) {
 	const hkdfKey = await crypto.subtle.importKey('raw', keyBytes, 'HKDF',
-						      false, ['deriveBits']);
+		false, ['deriveBits']);
 	const bytes = await crypto.subtle.deriveBits({
 		name: 'HKDF',
 		hash: HKDF_HASH,
 		salt: saltBytes,
 		info: HKDF_INFO_ID
 	},
-						     hkdfKey, ID_SIZE * 8);
+		hkdfKey, ID_SIZE * 8);
 	return new Uint8Array(bytes);
 }
 
-async function derivePasswordKey(password, saltBytes, usages)
-{
+async function derivePasswordKey(password, saltBytes, usages) {
 	const passwordBytes = encoder.encode(password);
 	let keyMaterial;
 	try {
@@ -438,8 +422,7 @@ async function derivePasswordKey(password, saltBytes, usages)
 	return key;
 }
 
-function parseLocationHash(input)
-{
+function parseLocationHash(input) {
 	if (!input)
 		return null;
 	let raw = input.trim();
@@ -469,8 +452,7 @@ function parseLocationHash(input)
 	return { id: idPart, bK: keyPart };
 }
 
-async function sendSecret(autoCopy = false)
-{
+async function sendSecret(autoCopy = false) {
 	setStatus('');
 	clearPendingSecret();
 	lockTextarea(true)
@@ -489,7 +471,7 @@ async function sendSecret(autoCopy = false)
 		const passwordInput = $('optionalPassword');
 		const passwordValue = passwordInput.value;
 		const hasPassword = typeof passwordValue === 'string' &&
-				    passwordValue.length > 0;
+			passwordValue.length > 0;
 		payload = encoder.encode(textField.value);
 		// Generate random bytes
 		keyBytes = crypto.getRandomValues(new Uint8Array(KEY_SIZE));
@@ -515,7 +497,7 @@ async function sendSecret(autoCopy = false)
 			payload = new Uint8Array(wrappedBuffer);
 		}
 		const tagBytes = hasPassword ? BLOB_TYPE_PASSWORD :
-					       BLOB_TYPE_TEXT;
+			BLOB_TYPE_TEXT;
 		taggedPayload = new Uint8Array(BLOB_TYPE_SIZE + payload.length);
 		// Add tag
 		taggedPayload.set(tagBytes, 0);
@@ -539,7 +521,7 @@ async function sendSecret(autoCopy = false)
 		// Construct the blob to send
 		// TODO: optimize?
 		blob = new Uint8Array(nonce.length + salt.length +
-				      ciphertext.length);
+			ciphertext.length);
 		// Pack N \\ S \\ ct
 		blob.set(nonce, 0);
 		blob.set(salt, nonce.length);
@@ -548,11 +530,11 @@ async function sendSecret(autoCopy = false)
 		if (blob.length > BLOB_SIZE_MAX - 100) {
 			// TODO: count better
 			setStatus('Secret is too large. Maximum size is ' + (BLOB_SIZE_MAX / 1024 - 1) + ' KiB.',
-				  false);
+				false);
 			return;
 		}
 		const url = normalizeOrigin(origin) + '/blob/' +
-			    bytesToHex(idBytes);
+			bytesToHex(idBytes);
 		// Send the data
 		const res = await fetch(url, {
 			method: 'POST',
@@ -561,8 +543,7 @@ async function sendSecret(autoCopy = false)
 		});
 		if (!res.ok) {
 			const t = await safeText(res);
-			throw new Error(`POST ${url} ${res.status}: ${
-				t || res.statusText}`);
+			throw new Error(`POST ${url} ${res.status}: ${t || res.statusText}`);
 		} else {
 			// Clear the password
 			// TODO: Ok?
@@ -579,27 +560,27 @@ async function sendSecret(autoCopy = false)
 		if (autoCopy && state.link) {
 			try {
 				if (typeof navigator === 'undefined' ||
-				    !navigator.clipboard ||
-				    typeof navigator.clipboard.writeText !==
-					    'function')
+					!navigator.clipboard ||
+					typeof navigator.clipboard.writeText !==
+					'function')
 					throw new Error(
 						'Clipboard API unavailable');
 				await navigator.clipboard.writeText(state.link);
 				setStatus(
 					'Secret stored and the share link was copied to your clipboard automatically.' +
-						passwordNote,
+					passwordNote,
 					true);
 			} catch (copyErr) {
 				console.error(copyErr);
 				setStatus(
 					'Secret stored, but automatic link copy failed. Use the copy button above.' +
-						passwordNote,
+					passwordNote,
 					true);
 			}
 		} else {
 			setStatus('Secret stored. Share the generated link.' +
-					  passwordNote,
-				  true);
+				passwordNote,
+				true);
 		}
 	} catch (err) {
 		console.error(err);
@@ -621,12 +602,11 @@ async function sendSecret(autoCopy = false)
 			salt.fill(0);
 		if (idBytes)
 			idBytes.fill(0);
+		lockTextarea(false);
 	}
-	lockTextarea(false);
 }
 
-async function copyLink()
-{
+async function copyLink() {
 	try {
 		if (!state.link) {
 			setStatus('No link available to copy.', false);
@@ -643,8 +623,7 @@ async function copyLink()
 	}
 }
 
-async function safeText(res)
-{
+async function safeText(res) {
 	try {
 		return await res.text();
 	} catch {
@@ -652,8 +631,7 @@ async function safeText(res)
 	}
 }
 
-async function tryToReceiveSecret()
-{
+async function tryToReceiveSecret() {
 	const info = parseLocationHash(window.location.hash || '');
 	if (!info)
 		return;
@@ -675,13 +653,12 @@ async function tryToReceiveSecret()
 			throw new Error('ID length mismatch');
 		setStatus('Fetching secret…');
 		const url = normalizeOrigin(origin) + '/blob/' +
-			    bytesToHex(idBytes);
+			bytesToHex(idBytes);
 		// Fetch the blob
 		const res = await fetch(url);
 		if (!res.ok) {
 			const t = await safeText(res);
-			throw new Error(`GET ${url} ${res.status}: ${
-				t || res.statusText}`);
+			throw new Error(`GET ${url} ${res.status}: ${t || res.statusText}`);
 		}
 		buf = new Uint8Array(await res.arrayBuffer());
 		// Check its size
@@ -699,9 +676,7 @@ async function tryToReceiveSecret()
 		if (!equal16B(derivedIdBytes, idBytes)) {
 			const derivedIdBase64Url =
 				base64UrlEncode(derivedIdBytes);
-			const err = new Error(`ID mismatch: derived ID' (${
-				derivedIdBase64Url}) !== provided ID (${
-				info.id}).`);
+			const err = new Error(`ID mismatch: derived ID' (${derivedIdBase64Url}) !== provided ID (${info.id}).`);
 			err.name = 'IdMismatchError';
 			err.derivedId = derivedIdBase64Url;
 			err.providedId = info.id;
@@ -722,11 +697,11 @@ async function tryToReceiveSecret()
 			throw new Error('Decrypted payload missing type tag');
 		// Unpack type tag
 		const blobTypeTagValue = (plaintextBytes[0] << 8) |
-					 plaintextBytes[1];
+			plaintextBytes[1];
 		const passwordProtected = blobTypeTagValue ===
-					  BLOB_TYPE_PASSWORD_VALUE;
+			BLOB_TYPE_PASSWORD_VALUE;
 		if (!passwordProtected &&
-		    blobTypeTagValue !== BLOB_TYPE_TEXT_VALUE)
+			blobTypeTagValue !== BLOB_TYPE_TEXT_VALUE)
 			throw new Error('Unsupported blob type');
 		const payloadBytes = plaintextBytes.subarray(BLOB_TYPE_SIZE);
 		if (passwordProtected) {
@@ -746,7 +721,7 @@ async function tryToReceiveSecret()
 			plaintextBytes = null;
 			setDecryptionCardVisible(true);
 			setStatus('Password required to decrypt this secret.',
-				  false);
+				false);
 			const passwordField = $('decryptionPassword');
 			if (passwordField) {
 				passwordField.value = '';
@@ -778,8 +753,7 @@ async function tryToReceiveSecret()
 	}
 }
 
-async function decryptPendingSecretWithPassword()
-{
+async function decryptPendingSecretWithPassword() {
 	const pending = state.pendingSecret;
 	if (!pending || !pending.ciphertext) {
 		setStatus('No secret waiting for password decryption.', false);
@@ -865,7 +839,7 @@ optionalPasswordField.addEventListener('keydown', (event) => {
 });
 const decryptBtn = $('decryptBtn');
 decryptBtn.addEventListener('click',
-			    () => { void decryptPendingSecretWithPassword(); });
+	() => { void decryptPendingSecretWithPassword(); });
 const passwordField = $('decryptionPassword');
 passwordField.addEventListener('keydown', (event) => {
 	if (event.key === 'Enter') {
@@ -898,7 +872,7 @@ $('host').addEventListener('change', () => {
 	}
 });
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
 	const textarea = document.getElementById('text');
 	const navToggle = document.querySelector('.nav-toggle');
 	const navLinks = document.querySelector('.nav-links');
@@ -906,8 +880,8 @@ document.addEventListener('DOMContentLoaded', function() {
 	if (textarea) {
 		const charCount = document.createElement('div');
 		const encoder = typeof TextEncoder === 'function' ?
-					new TextEncoder() :
-					null;
+			new TextEncoder() :
+			null;
 		const maxBytes = BLOB_SIZE_MAX - 100; // TODO: count better
 		const maxKiBLabel = (maxBytes / 1024).toFixed(2);
 		const toKiB = (bytes) => (bytes / 1024).toFixed(2);
@@ -918,8 +892,8 @@ document.addEventListener('DOMContentLoaded', function() {
 		const updateCount = () => {
 			const value = textarea.value || '';
 			const sizeBytes = encoder ?
-						  encoder.encode(value).length :
-						  value.length;
+				encoder.encode(value).length :
+				value.length;
 			const usageKiB = toKiB(sizeBytes);
 
 			charCount.textContent =
@@ -964,7 +938,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 		document.addEventListener('click', (event) => {
 			if (!navLinks.contains(event.target) &&
-			    !navToggle.contains(event.target)) {
+				!navToggle.contains(event.target)) {
 				closeNav();
 			}
 		});
