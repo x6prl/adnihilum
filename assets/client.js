@@ -544,8 +544,10 @@ async function sendSecret(autoCopy = false)
 		blob.set(nonce, 0);
 		blob.set(salt, nonce.length);
 		blob.set(ciphertext, nonce.length + salt.length);
-		if (blob.length > BLOB_SIZE_MAX) {
-			setStatus('Secret is too large. Maximum size is 1 MiB.',
+		// TODO: count better
+		if (blob.length > BLOB_SIZE_MAX - 100) {
+			// TODO: count better
+			setStatus('Secret is too large. Maximum size is ' + (BLOB_SIZE_MAX / 1024 - 1) + ' KiB.',
 				  false);
 			return;
 		}
