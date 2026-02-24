@@ -39,7 +39,7 @@ static inline void key_set_null(htable_key_t *a);
 // table_size must be a power of 2
 static inline htable_index_t lp_home_index(uint64_t hash,
 					   htable_index_t table_size);
-// keys must not be full
+// keys array MUST NOT be full
 static inline htable_index_t lp_find_free_slot(const htable_key_t *keys,
 					       const htable_key_t key,
 					       htable_index_t table_size);

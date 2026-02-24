@@ -19,7 +19,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /*
- * zeroed-on-alloc freelist pool allocator for request context
+ * zeroed-on-allocation freelist pool allocator for request contexts
  */
 
 #pragma once

@@ -146,26 +146,6 @@ openssl req -x509 -newkey rsa:4096 -nodes -keyout key.pem -out cert.pem -days 36
     • The client-side JS checks `location.hash`, and if it contains **ID** and **K**, it fetches the data from the server.
     • It verifies, decrypts, and, if needed, asks for a password and decrypts again.
 
-## Support the development
-
-### ETH
-
-```
-0xA33dbE6d7c49b76Bb3c22cbfd2B0d83597709008
-```
-
-### BTC
-
-```
-bc1qnnhvqhpmkglv2gmejmjr06a7f0aktxmrt7n586
-```
-
-### XMR
-
-```
-45dwLodwU3vLE6XHojBY7m1w7T9NH6dEiagfKmGzo7Fu4SDLYgfcjzn9rYxb55DcSYGp3qA2PkKoz8WWECxGDitqU8u8itB
-```
-
 ## License
 
 This project is licensed under the GNU General Public License v3.0. See `LICENSE` for the full text.

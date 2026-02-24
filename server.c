@@ -969,9 +969,11 @@ static enum MHD_Result ahc(void *cls, struct MHD_Connection *conn,
 				}
 				monotonic_time_t valid_until =
 					monotonic_now_s() + BLOB_TTL_S;
-				if (!storage_blob_publish(ctx->id, valid_until)) {
+				if (!storage_blob_publish(ctx->id,
+							  valid_until)) {
 					AHC_RETURN(send_text(
-						conn, MHD_HTTP_INTERNAL_SERVER_ERROR,
+						conn,
+						MHD_HTTP_INTERNAL_SERVER_ERROR,
 						"Internal error, cannot publish the blob"));
 				}
 				statistics.total_served += 1;

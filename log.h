@@ -82,5 +82,5 @@ void log_(bool ERROR, const char *restrict func, const char *restrict fmt, ...)
 
 #define LOG(fmt, ...) log_(false, __func__, fmt, ##__VA_ARGS__)
 #define LOGE(fmt, ...) log_(true, __func__, fmt, ##__VA_ARGS__)
-// it is really terrible to not to have a good debugger
+// it is really terrible not to have a good debugger
 #define LOGD(fmt, ...) logd_(__func__, fmt, ##__VA_ARGS__)

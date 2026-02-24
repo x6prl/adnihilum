@@ -20,8 +20,6 @@
 
 #pragma once
 
-#include <time.h>
-#include <stdio.h>
 #include <microhttpd.h>
 
 #include <arpa/inet.h>
