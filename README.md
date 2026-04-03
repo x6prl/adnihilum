@@ -245,7 +245,7 @@ go run ./tools/adnihilum_bench.go \
 **4) Link structure & leakage**
 
 * **OTS:** Share URL is a lookup token; the decryption key lives on the server, so the link alone lets the server (and anyone with server access) recover plaintext.
-* **Ad Nihilum:** Share URL is `…/#<ID>/<base64url(K)>`. The **key is in the URL fragment**, which browsers do **not** send to servers over HTTP(S). Even if the path leaks to logs or a preview bot hits it, the bot can’t decrypt without the fragment.
+* **Ad Nihilum:** Share URL is `…/#<ID>/<base64url(K)>`. The **key is in the URL fragment**, which browsers do **not** send to servers over HTTP(S). Even if the path leaks to logs or a preview bot hits it, the bot can’t decrypt without the fragment. However, the fragment can still be recorded locally by the browser itself, for example in history/session-restore data.
 
 **5) Storage semantics**
 
@@ -267,6 +267,7 @@ go run ./tools/adnihilum_bench.go \
 
 * **Side channels & metadata:** Adversaries can learn **that** a secret was exchanged, when, and its approximate size (ciphertext length) from traffic patterns or logs. Also IP metadata.
 * **Post-decrypt mishandling:** Once the recipient’s browser shows plaintext, anything they copy/download/store (or their autosave/history/snapshots) is out of scope.
+* **Browser history/session restore:** Browsers may persist the fragment key in local history, “recently closed”, synced history, or session-restore state. Use "private tabs".
 * **Browser extensions & injected content:** Over-permissive extensions can access page DOM and the URL fragment; some “productivity” extensions phone home.
 * **Rendering in hostile containers:** In-app browsers (e. g. in Telegram) may inject code.
 * **Malicious front-end code:** If the served HTML/JS is modified (server compromise, CDN injection, extension injecting scripts), it can read `location.hash` and exfiltrate `K` before/after decryption. Fragment secrecy helps only if the JS is honest.
