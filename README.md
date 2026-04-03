@@ -1,6 +1,6 @@
 # Ad Nihilum (`adnihilum`)
 
-`Ad Nihilum` is an in-memory, one-time secret drop box. It lets you exchange a single encrypted payload between two parties without ever writing the cleartext or ciphertext to disk. The client runs in the browser; the server is a small HTTPS daemon that stores blobs in RAM until they are retrieved once or they expire.
+`Ad Nihilum` provides ephemeral secret sharing with single-use retrieval and automatic expiration. The client runs in the browser; the server is a small daemon in C that stores blobs in RAM until they are retrieved once or they expire.
 
 ## Demo
 

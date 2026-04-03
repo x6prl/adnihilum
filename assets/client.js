@@ -23,11 +23,29 @@
 	if (!shared)
 		throw new Error('client-shared.js must be loaded before client.js');
 
-	shared.initCommonUi();
+	function initResponsivePlaceholders() {
+		const text = document.getElementById('text');
+		if (!text || typeof window.matchMedia !== 'function')
+			return;
 
-	const closeStatusBtn = shared.$('closeStatus');
-	if (closeStatusBtn)
-		closeStatusBtn.addEventListener('click', () => { shared.setStatus(''); });
+		const mobileMedia = window.matchMedia('(max-width: 680px)');
+		const updatePlaceholders = function () {
+			text.placeholder = mobileMedia.matches
+				? text.dataset.placeholderMobile
+				: text.dataset.placeholderDesktop;
+		};
+
+		updatePlaceholders();
+		if (typeof mobileMedia.addEventListener === 'function')
+			mobileMedia.addEventListener('change', updatePlaceholders);
+		else if (typeof mobileMedia.addListener === 'function')
+			mobileMedia.addListener(updatePlaceholders);
+	}
+
+	shared.initCommonUi();
+	shared.initPopup();
+	shared.bindSensitiveUiScrubbing();
+	initResponsivePlaceholders();
 
 	if (window.AdNihilumSend && typeof window.AdNihilumSend.init === 'function')
 		window.AdNihilumSend.init();

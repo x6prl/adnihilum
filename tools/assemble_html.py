@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Inline the client CSS and JS into a single HTML file.
+Inline the client CSS and page-specific JS into assembled HTML assets.
 Keep it tiny and purpose-built for the current project layout.
 """
 
@@ -12,9 +12,11 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 ASSETS_DIR = REPO_ROOT / "assets"
-HTML_IN = ASSETS_DIR / "client.html"
+SEND_HTML_IN = ASSETS_DIR / "client.html"
+RECEIVE_HTML_IN = ASSETS_DIR / "client-receive.html"
 CSS_FILE = ASSETS_DIR / "client.css"
-HTML_OUT = ASSETS_DIR / "client_assembled.html"
+SEND_HTML_OUT = ASSETS_DIR / "client_assembled.html"
+RECEIVE_HTML_OUT = ASSETS_DIR / "client-receive_assembled.html"
 
 CSS_TAG = '<link rel="stylesheet" href="client.css">'
 QR_TAG = '<script src="qrcode.js"></script>'
@@ -31,54 +33,89 @@ def read_text(path: Path) -> str:
 
 
 def prefer_min_js(stem: str) -> Path:
-    """Return the minified JS if it exists, otherwise the regular version."""
+    """
+    Return the minified JS when it exists and is at least as new as the
+    unminified source; otherwise use the regular version to avoid bundling stale
+    code.
+    """
     min_path = ASSETS_DIR / f"{stem}.min.js"
-    if min_path.is_file():
+    src_path = ASSETS_DIR / f"{stem}.js"
+    if min_path.is_file() and (
+        not src_path.is_file() or
+        min_path.stat().st_mtime >= src_path.stat().st_mtime
+    ):
         return min_path
-    return ASSETS_DIR / f"{stem}.js"
+    return src_path
 
 
-def main() -> None:
-    html = read_text(HTML_IN)
+def build_page(
+    html_in: Path,
+    html_out: Path,
+    include_qr: bool,
+    page_script_tag: str,
+    page_script: str,
+) -> None:
+    html = read_text(html_in)
     css = read_text(CSS_FILE)
-    qr = read_text(prefer_min_js("qrcode"))
     client_shared = read_text(prefer_min_js("client-shared"))
-    client_send = read_text(prefer_min_js("client-send"))
-    client_receive = read_text(prefer_min_js("client-receive"))
     client = read_text(prefer_min_js("client"))
 
-    for tag in (
-        CSS_TAG,
-        QR_TAG,
-        CLIENT_SHARED_TAG,
-        CLIENT_SEND_TAG,
-        CLIENT_RECEIVE_TAG,
-        CLIENT_TAG,
-    ):
+    expected_tags = [CSS_TAG, CLIENT_SHARED_TAG, page_script_tag, CLIENT_TAG]
+    if include_qr:
+        expected_tags.insert(1, QR_TAG)
+
+    for tag in expected_tags:
         if tag not in html:
-            sys.exit(f"expected '{tag}' in {HTML_IN}")
+            sys.exit(f"expected '{tag}' in {html_in}")
 
     html = html.replace(CSS_TAG, f"<style>\n{css.rstrip()}\n</style>", 1)
 
-    bundle = (
-        "<script>(function(){\n"
-        f"{qr.rstrip()}\n"
-        'if (typeof globalThis !== "undefined" && typeof QRCode !== "undefined") { globalThis.QRCode = QRCode; }\n'
-        f"{client_shared.rstrip()}\n"
-        f"{client_send.rstrip()}\n"
-        f"{client_receive.rstrip()}\n"
-        f"{client.rstrip()}\n"
-        "})();</script>"
-    )
+    bundle_parts = ["<script>(function(){"]
+    if include_qr:
+        qr = read_text(prefer_min_js("qrcode"))
+        bundle_parts.append(qr.rstrip())
+        bundle_parts.append(
+            'if (typeof globalThis !== "undefined" && '
+            'typeof QRCode !== "undefined") { globalThis.QRCode = QRCode; }'
+        )
+    bundle_parts.extend([
+        client_shared.rstrip(),
+        page_script.rstrip(),
+        client.rstrip(),
+        "})();</script>",
+    ])
+    bundle = "\n".join(bundle_parts)
 
-    html = html.replace(QR_TAG, bundle, 1)
+    if include_qr:
+        html = html.replace(QR_TAG, bundle, 1)
+    else:
+        html = html.replace(CLIENT_SHARED_TAG, bundle, 1)
+
     html = html.replace(CLIENT_SHARED_TAG, "", 1)
-    html = html.replace(CLIENT_SEND_TAG, "", 1)
-    html = html.replace(CLIENT_RECEIVE_TAG, "", 1)
+    html = html.replace(page_script_tag, "", 1)
     html = html.replace(CLIENT_TAG, "", 1)
+    if include_qr:
+        html = html.replace(QR_TAG, "", 1)
 
-    HTML_OUT.write_text(html, encoding="utf-8")
-    print(f"Wrote {HTML_OUT}")
+    html_out.write_text(html, encoding="utf-8")
+    print(f"Wrote {html_out}")
+
+
+def main() -> None:
+    build_page(
+        html_in=SEND_HTML_IN,
+        html_out=SEND_HTML_OUT,
+        include_qr=True,
+        page_script_tag=CLIENT_SEND_TAG,
+        page_script=read_text(prefer_min_js("client-send")),
+    )
+    build_page(
+        html_in=RECEIVE_HTML_IN,
+        html_out=RECEIVE_HTML_OUT,
+        include_qr=False,
+        page_script_tag=CLIENT_RECEIVE_TAG,
+        page_script=read_text(prefer_min_js("client-receive")),
+    )
 
 
 if __name__ == "__main__":

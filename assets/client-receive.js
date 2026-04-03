@@ -21,18 +21,59 @@
 (function () {
 	const shared = window.AdNihilumShared;
 
+	function setViewerText(message, tone = '') {
+		const textField = shared.$('text');
+		if (!textField)
+			return;
+		textField.classList.remove('receive-state-info', 'receive-state-error');
+		if (tone === 'info' || tone === 'error')
+			textField.classList.add('receive-state-' + tone);
+		textField.value = message;
+		textField.dispatchEvent(new Event('input', { bubbles: true }));
+		syncCopyButtonState();
+	}
+
+	function friendlyReceiveError(err) {
+		const message = err && err.message ? err.message : String(err || '');
+		if (err && err.name === 'IdMismatchError')
+			return 'This link looks broken or incomplete.';
+		if (/Invalid base64 data|Key length mismatch|ID length mismatch/i.test(message))
+			return 'This link looks broken or incomplete.';
+		if (/GET .* (404|410)\b/i.test(message))
+			return 'This secret is no longer available. It may have already been opened or expired.';
+		if (/Blob is too small|Unsupported blob type|Decrypted payload missing type tag/i.test(message))
+			return 'This secret could not be opened. The link may be damaged.';
+		if (/Failed to prepare password protected payload/i.test(message))
+			return 'This secret could not be prepared for decryption.';
+		return 'Could not open the secret. Try opening the full link again.';
+	}
+
+	function syncCopyButtonState() {
+		const textField = shared.$('text');
+		const copyBtn = shared.$('copySecretBtn');
+		if (!textField || !copyBtn)
+			return;
+		copyBtn.disabled = !textField.value;
+	}
+
 	async function tryToReceiveSecret() {
 		const info = shared.parseLocationHash(window.location.hash || '');
-		if (!info)
+		if (!info) {
+			setViewerText('Open a full secret link to view a message.', 'info');
 			return;
+		}
+
 		shared.clearLocationHash();
 		shared.clearPendingSecret();
 		shared.lockTextarea(true);
+		setViewerText('Receiving secret...', 'info');
+
 		let keyBytes = null;
 		let buf = null;
 		let plaintextBytes = null;
 		let idBytes = null;
 		let derivedIdBytes = null;
+
 		try {
 			const origin = shared.getOrigin();
 			keyBytes = shared.base64UrlDecode(info.bK);
@@ -41,14 +82,15 @@
 			idBytes = shared.base64UrlDecode(info.id);
 			if (!idBytes || idBytes.length !== shared.ID_SIZE)
 				throw new Error('ID length mismatch');
-			shared.setStatus('Fetching secret…');
+
 			const url = shared.normalizeOrigin(origin) + '/blob/' +
 				shared.bytesToHex(idBytes);
 			const res = await fetch(url);
 			if (!res.ok) {
-				const t = await shared.safeText(res);
-				throw new Error(`GET ${url} ${res.status}: ${t || res.statusText}`);
+				const responseText = await shared.safeText(res);
+				throw new Error(`GET ${url} ${res.status}: ${responseText || res.statusText}`);
 			}
+
 			buf = new Uint8Array(await res.arrayBuffer());
 			if (buf.length <= shared.NONCE_SIZE + shared.SALT_SIZE +
 				shared.BLOB_TYPE_SIZE) {
@@ -56,14 +98,14 @@
 			}
 
 			const nonce = buf.subarray(0, shared.NONCE_SIZE);
-			const salt = buf.subarray(shared.NONCE_SIZE,
+			const salt = buf.subarray(
+				shared.NONCE_SIZE,
 				shared.NONCE_SIZE + shared.SALT_SIZE);
-			const ct = buf.subarray(shared.NONCE_SIZE + shared.SALT_SIZE);
+			const ciphertext = buf.subarray(shared.NONCE_SIZE + shared.SALT_SIZE);
 
 			derivedIdBytes = await shared.deriveIdFromKeyAndSalt(keyBytes, salt);
 			if (!shared.equal16B(derivedIdBytes, idBytes)) {
-				const derivedIdBase64Url =
-					shared.base64UrlEncode(derivedIdBytes);
+				const derivedIdBase64Url = shared.base64UrlEncode(derivedIdBytes);
 				const err = new Error(
 					`ID mismatch: derived ID' (${derivedIdBase64Url}) !== provided ID (${info.id}).`);
 				err.name = 'IdMismatchError';
@@ -73,15 +115,20 @@
 			}
 
 			const aesKey = await crypto.subtle.importKey(
-				'raw', keyBytes,
-				{ name: 'AES-GCM', length: shared.KEY_SIZE * 8 }, false,
+				'raw',
+				keyBytes,
+				{ name: 'AES-GCM', length: shared.KEY_SIZE * 8 },
+				false,
 				['decrypt']);
 			const aad = shared.encoder.encode('id=' + info.id);
 			plaintextBytes = new Uint8Array(await crypto.subtle.decrypt(
 				{ name: 'AES-GCM', iv: nonce, additionalData: aad },
-				aesKey, ct));
+				aesKey,
+				ciphertext));
+
 			if (plaintextBytes.length < shared.BLOB_TYPE_SIZE)
 				throw new Error('Decrypted payload missing type tag');
+
 			const blobTypeTagValue = (plaintextBytes[0] << 8) |
 				plaintextBytes[1];
 			const passwordProtected = blobTypeTagValue ===
@@ -90,15 +137,16 @@
 				blobTypeTagValue !== shared.BLOB_TYPE_TEXT_VALUE) {
 				throw new Error('Unsupported blob type');
 			}
+
 			const payloadBytes = plaintextBytes.subarray(shared.BLOB_TYPE_SIZE);
 			if (passwordProtected) {
 				const nonceCopy = shared.cloneBytes(nonce);
 				const saltCopy = shared.cloneBytes(salt);
 				const ciphertextCopy = shared.cloneBytes(payloadBytes);
 				if (!nonceCopy || !saltCopy || !ciphertextCopy) {
-					throw new Error(
-						'Failed to prepare password protected payload');
+					throw new Error('Failed to prepare password protected payload');
 				}
+
 				shared.state.pendingSecret = {
 					id: info.id,
 					nonce: nonceCopy,
@@ -107,9 +155,8 @@
 				};
 				plaintextBytes.fill(0);
 				plaintextBytes = null;
+				setViewerText('');
 				shared.setDecryptionCardVisible(true);
-				shared.setStatus('Password required to decrypt this secret.',
-					false);
 				const passwordField = shared.$('decryptionPassword');
 				if (passwordField) {
 					passwordField.value = '';
@@ -117,16 +164,15 @@
 				}
 				return;
 			}
+
 			const textField = shared.$('text');
 			if (!textField)
 				return;
-			textField.value = shared.decoder.decode(payloadBytes);
-			textField.dispatchEvent(new Event('input', { bubbles: true }));
-			shared.setStatus('Secret retrieved and decrypted.', true);
+			setViewerText(shared.decoder.decode(payloadBytes));
 		} catch (err) {
 			console.error(err);
 			shared.setDecryptionCardVisible(false);
-			shared.setStatus(err.message || String(err));
+			setViewerText(friendlyReceiveError(err), 'error');
 			shared.clearPendingSecret();
 		} finally {
 			if (plaintextBytes)
@@ -146,24 +192,30 @@
 	async function decryptPendingSecretWithPassword() {
 		const pending = shared.state.pendingSecret;
 		if (!pending || !pending.ciphertext) {
-			shared.setStatus('No secret waiting for password decryption.', false);
+			setViewerText('There is no secret waiting for password decryption.',
+				'error');
 			return;
 		}
+
 		const passwordField = shared.$('decryptionPassword');
 		if (!passwordField)
 			return;
+
 		const passwordValue = passwordField.value;
 		if (!passwordValue) {
-			shared.setStatus('Enter the password to decrypt this secret.', false);
 			passwordField.focus();
 			return;
 		}
+
 		let plaintextBytes = null;
 		let decrypted = false;
+
 		try {
-			shared.setStatus('Decrypting secret with provided password…');
+			setViewerText('Receiving secret...', 'info');
 			const passwordKey = await shared.derivePasswordKey(
-				passwordValue, pending.salt, ['decrypt']);
+				passwordValue,
+				pending.salt,
+				['decrypt']);
 			const aad = shared.encoder.encode('id=' + pending.id);
 			plaintextBytes = new Uint8Array(await crypto.subtle.decrypt(
 				{
@@ -171,19 +223,20 @@
 					iv: pending.nonce,
 					additionalData: aad
 				},
-				passwordKey, pending.ciphertext));
+				passwordKey,
+				pending.ciphertext));
 			const textField = shared.$('text');
 			if (!textField)
 				return;
-			textField.value = shared.decoder.decode(plaintextBytes);
-			textField.dispatchEvent(new Event('input', { bubbles: true }));
+
+			setViewerText(shared.decoder.decode(plaintextBytes));
 			passwordField.value = '';
-			shared.setStatus('Secret decrypted with the provided password.', true);
 			shared.setDecryptionCardVisible(false);
 			decrypted = true;
 		} catch (err) {
 			console.error(err);
-			shared.setStatus('Could not decrypt with that password.', false);
+			setViewerText('That password did not work. Check it and try again.',
+				'error');
 			passwordField.select();
 			passwordField.focus();
 		} finally {
@@ -197,6 +250,9 @@
 	function init() {
 		const decryptBtn = shared.$('decryptBtn');
 		const passwordField = shared.$('decryptionPassword');
+		const copyBtn = shared.$('copySecretBtn');
+		const textField = shared.$('text');
+
 		if (decryptBtn) {
 			decryptBtn.addEventListener('click',
 				() => { void decryptPendingSecretWithPassword(); });
@@ -209,6 +265,37 @@
 				}
 			});
 		}
+		if (copyBtn) {
+			const defaultCopyLabel = copyBtn.textContent;
+			copyBtn.addEventListener('click', () => {
+				void (async function () {
+					const currentText = shared.$('text');
+					if (!currentText || !currentText.value ||
+						currentText.classList.contains('receive-state-error') ||
+						currentText.classList.contains('receive-state-info')) {
+						return;
+					}
+					try {
+						await navigator.clipboard.writeText(currentText.value);
+						copyBtn.textContent = 'Copied';
+						setTimeout(() => {
+							copyBtn.textContent = defaultCopyLabel;
+						}, 1200);
+					} catch (err) {
+						console.error(err);
+						copyBtn.textContent = 'Copy failed';
+						setTimeout(() => {
+							copyBtn.textContent = defaultCopyLabel;
+						}, 1200);
+					}
+				})();
+			});
+		}
+		if (textField) {
+			textField.addEventListener('input', syncCopyButtonState);
+			syncCopyButtonState();
+		}
+
 		void tryToReceiveSecret();
 	}
 

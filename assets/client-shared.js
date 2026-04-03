@@ -47,19 +47,12 @@
 		id: null,
 		bK: null,
 		link: null,
-		qrVisible: false,
 		pendingSecret: null,
 		originalPlaceholder: null,
+		originalReadonly: null,
 	};
 	let qrInstance = null;
-	const STATUS_ICON_PATHS = {
-		success:
-			'<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/>',
-		error: '<path d="M12 7v7" stroke-linecap="round" stroke-linejoin="round"/>' +
-			'<path d="M12 17h.01" stroke-linecap="round" stroke-linejoin="round"/>',
-		info: '<path d="M12 8h.01" stroke-linecap="round" stroke-linejoin="round"/>' +
-			'<path d="M11 12h1v4h1" stroke-linecap="round" stroke-linejoin="round"/>'
-	};
+
 	const isMacLike = (() => {
 		if (typeof navigator === 'undefined')
 			return false;
@@ -77,8 +70,7 @@
 		try {
 			if (typeof history !== 'undefined' &&
 				typeof history.replaceState === 'function') {
-				const path = window.location.pathname +
-					window.location.search;
+				const path = window.location.pathname + window.location.search;
 				history.replaceState(null, '', path);
 			} else {
 				window.location.hash = '';
@@ -88,43 +80,33 @@
 		}
 	}
 
-	function setStatus(msg, ok = false) {
-		const wrap = $('statusNotification');
-		const message = $('statusMessage');
-		const subtitle = $('heroSubtitle');
-		const iconHolder = $('statusIcon');
-		const iconSvg =
-			iconHolder ? iconHolder.querySelector('.status-icon-graphic') :
-				null;
-		const progress = $('progressBar');
-
-		if (!wrap || !message || !subtitle || !iconSvg || !progress)
+	function initPopup() {
+		const popup = $('appPopup');
+		if (!popup || popup.dataset.bound === 'true')
 			return;
 
-		if (!msg) {
-			message.textContent = '';
-			wrap.classList.remove('is-visible', 'is-success', 'is-error');
-			progress.style.width = '0%';
-			iconSvg.innerHTML = '';
-			subtitle.classList.remove('is-hidden');
+		popup.dataset.bound = 'true';
+		popup.addEventListener('click', (event) => {
+			if (event.target === popup)
+				popup.close();
+		});
+	}
+
+	function showPopup(title, message) {
+		const popup = $('appPopup');
+		const titleEl = $('appPopupTitle');
+		const bodyEl = $('appPopupBody');
+		if (!popup || !titleEl || !bodyEl)
 			return;
+
+		titleEl.textContent = title || 'Something went wrong';
+		bodyEl.textContent = message || '';
+		if (typeof popup.showModal === 'function') {
+			if (!popup.open)
+				popup.showModal();
+		} else {
+			popup.setAttribute('open', 'open');
 		}
-
-		message.textContent = msg;
-		wrap.classList.add('is-visible');
-		wrap.classList.toggle('is-success', !!ok);
-		wrap.classList.toggle('is-error', !ok);
-		subtitle.classList.add('is-hidden');
-
-		const iconKey = ok ? 'success' : 'error';
-		iconSvg.innerHTML = STATUS_ICON_PATHS[iconKey] ||
-			STATUS_ICON_PATHS.info || '';
-
-		progress.style.transition = 'none';
-		progress.style.width = '0%';
-		void progress.offsetWidth;
-		progress.style.transition = '';
-		progress.style.width = '100%';
 	}
 
 	function clearPendingSecret() {
@@ -142,49 +124,87 @@
 
 	function setDecryptionCardVisible(visible) {
 		const deCard = $('decryptionCard');
-		const enCard = $('encryptionCard');
-		if (!deCard || !enCard)
-			return;
-		if (visible) {
-			deCard.classList.add('is-visible');
-			enCard.classList.remove('is-visible');
-		} else {
-			deCard.classList.remove('is-visible');
-			enCard.classList.add('is-visible');
+		if (deCard) {
+			deCard.classList.toggle('is-visible', !!visible);
+			const stack = deCard.closest('.stack');
+			if (stack)
+				stack.classList.toggle('stack-decryption-active', !!visible);
+		}
+		if (!visible) {
 			const pwd = $('decryptionPassword');
 			if (pwd)
 				pwd.value = '';
 		}
 	}
 
+	function scrubSensitiveUi() {
+		['text', 'optionalPassword', 'decryptionPassword', 'generatedUrl']
+			.forEach((id) => {
+				const field = $(id);
+				if (!field || typeof field.value !== 'string' || !field.value)
+					return;
+				field.value = '';
+				field.dispatchEvent(new Event('input', { bubbles: true }));
+			});
+		setLink(null, null, null);
+		setDecryptionCardVisible(false);
+		clearPendingSecret();
+	}
+
+	function bindSensitiveUiScrubbing() {
+		if (typeof window === 'undefined' || typeof document === 'undefined')
+			return;
+		if (document.documentElement.dataset.sensitiveUiBound === 'true')
+			return;
+		document.documentElement.dataset.sensitiveUiBound = 'true';
+
+		const scrubSoon = () => {
+			if (typeof window.requestAnimationFrame === 'function') {
+				window.requestAnimationFrame(() => {
+					scrubSensitiveUi();
+				});
+			} else {
+				setTimeout(scrubSensitiveUi, 0);
+			}
+		};
+
+		scrubSoon();
+		window.addEventListener('pagehide', scrubSensitiveUi);
+		window.addEventListener('pageshow', (event) => {
+			if (event.persisted)
+				scrubSoon();
+		});
+	}
+
 	function lockTextarea(lock) {
 		const textField = $('text');
 		if (!textField)
 			return;
+
 		if (state.originalPlaceholder === null) {
 			const initial = textField.getAttribute('placeholder');
 			state.originalPlaceholder =
 				typeof initial === 'string' ? initial : '';
 		}
+		if (state.originalReadonly === null)
+			state.originalReadonly = textField.hasAttribute('readonly');
+
 		if (lock) {
 			textField.classList.add('textarea-locked');
 			textField.setAttribute('readonly', 'true');
-			textField.setAttribute(
-				'placeholder',
-				'Secret will appear here after you decrypt it.');
 		} else {
 			textField.classList.remove('textarea-locked');
-			textField.removeAttribute('readonly');
-			if (state.originalPlaceholder !== null) {
-				if (state.originalPlaceholder === '') {
-					textField.removeAttribute('placeholder');
-				} else {
-					textField.setAttribute(
-						'placeholder',
-						state.originalPlaceholder);
-				}
+			if (state.originalReadonly)
+				textField.setAttribute('readonly', 'true');
+			else
+				textField.removeAttribute('readonly');
+			if (state.originalPlaceholder === '') {
+				textField.removeAttribute('placeholder');
+			} else {
+				textField.setAttribute('placeholder', state.originalPlaceholder);
 			}
 		}
+
 		textField.dispatchEvent(new Event('input', { bubbles: true }));
 	}
 
@@ -215,15 +235,16 @@
 		const container = $('qrCode');
 		if (!wrap || !container)
 			return;
-		const qrTarget = state.link;
-		if (!state.qrVisible || !qrTarget) {
-			wrap.style.display = 'none';
+
+		if (!state.link) {
+			wrap.hidden = true;
 			if (qrInstance && typeof qrInstance.clear === 'function')
 				qrInstance.clear();
 			container.innerHTML = '';
 			qrInstance = null;
 			return;
 		}
+
 		try {
 			if (typeof window.QRCode !== 'function')
 				throw new Error('QR renderer unavailable');
@@ -234,51 +255,79 @@
 					border: QRCODE_BORDER,
 					colorDark: '#000000',
 					colorLight: '#ffffff',
-					correctLevel: QRCODE_CORRECT_LEVEL == 0 ?
+					correctLevel: QRCODE_CORRECT_LEVEL === 0 ?
 						QRCode.CorrectLevel.L :
 						QRCode.CorrectLevel.H,
 				});
 			} else if (typeof qrInstance.clear === 'function') {
 				qrInstance.clear();
 			}
-			qrInstance.makeCode(qrTarget);
-			wrap.style.display = 'flex';
+			qrInstance.makeCode(state.link);
+			wrap.hidden = false;
 		} catch (err) {
 			console.error(err);
-			wrap.style.display = 'none';
+			wrap.hidden = true;
 			if (qrInstance && typeof qrInstance.clear === 'function')
 				qrInstance.clear();
 			container.innerHTML = '';
 			qrInstance = null;
-			state.qrVisible = false;
-			const btn = $('btnGenerateQr');
-			if (btn)
-				btn.textContent = 'Generate QR';
-			setStatus(err.message || String(err));
 		}
+	}
+
+	function getQrImageBlob() {
+		const container = $('qrCode');
+		if (!container)
+			return Promise.reject(new Error('QR code is not available'));
+
+		const canvas = container.querySelector('canvas');
+		if (canvas) {
+			return new Promise((resolve, reject) => {
+				canvas.toBlob((blob) => {
+					if (blob)
+						resolve(blob);
+					else
+						reject(new Error('Could not prepare QR image'));
+				}, 'image/png');
+			});
+		}
+
+		const img = container.querySelector('img');
+		if (img && img.src && img.src.startsWith('data:')) {
+			return fetch(img.src).then((response) => {
+				if (!response.ok)
+					throw new Error('Could not prepare QR image');
+				return response.blob();
+			});
+		}
+
+		const svg = container.querySelector('svg');
+		if (svg) {
+			return Promise.resolve(new Blob(
+				[new XMLSerializer().serializeToString(svg)],
+				{ type: 'image/svg+xml' }));
+		}
+
+		return Promise.reject(new Error('QR code is not available'));
 	}
 
 	function setLink(origin, id, bK) {
 		const wrap = $('generatedWrap');
 		const input = $('generatedUrl');
 		const copyBtn = $('btnCopyLink');
-		const qrBtn = $('btnGenerateQr');
+		const copyQrBtn = $('btnCopyQrImage');
 
 		const reset = () => {
 			state.id = null;
 			state.bK = null;
 			state.link = null;
-			state.qrVisible = false;
 			if (wrap)
-				wrap.style.display = 'none';
+				wrap.hidden = true;
 			if (input)
 				input.value = '';
 			if (copyBtn)
-				copyBtn.style.display = 'none';
-			if (qrBtn) {
-				qrBtn.style.display = 'none';
-				qrBtn.textContent = 'Generate QR';
-			}
+				copyBtn.hidden = true;
+			if (copyQrBtn)
+				copyQrBtn.hidden = true;
 		};
 
 		if (!origin || !id || !bK) {
@@ -300,23 +349,24 @@
 
 			const keyBase64Url = base64UrlEncode(keyBytes);
 			const idBase64Url = base64UrlEncode(idBytes);
-			state.link =
-				normalized + '/#' + idBase64Url + '/' + keyBase64Url;
+			state.link = normalized + '/receive#' + idBase64Url + '/' +
+				keyBase64Url;
 			state.id = idBase64Url;
 			state.bK = keyBase64Url;
 
 			if (wrap)
-				wrap.style.display = 'flex';
+				wrap.hidden = false;
 			if (input)
 				input.value = state.link;
 			if (copyBtn)
-				copyBtn.style.display = 'inline-block';
+				copyBtn.hidden = false;
+			if (copyQrBtn)
+				copyQrBtn.hidden = false;
 			const host = $('host');
 			if (host)
 				host.value = normalized;
 		} catch (err) {
 			console.error(err);
-			setStatus(err.message || String(err));
 			reset();
 			updateQr();
 			return;
@@ -327,42 +377,49 @@
 				idBytes.fill(0);
 		}
 
-		if (qrBtn) {
-			qrBtn.style.display = state.link ? 'inline-block' : 'none';
-			qrBtn.textContent = state.qrVisible ? 'Hide QR' : 'Generate QR';
-		}
 		updateQr();
 	}
 
 	function getOrigin() {
 		const el = $('host');
-		if (!el)
-			throw new Error('Service origin input is missing');
-		const raw = (el.value.length > 6 ? el.value :
-			'https://local.tanuki-gecko.ts.net')
-			.trim();
+		let raw = '';
+
+		if (el && el.value.length > 6)
+			raw = el.value.trim();
+		if (!raw) {
+			try {
+				if (window.location.origin && window.location.origin !== 'null')
+					raw = window.location.origin;
+			} catch (_) {
+				// ignore
+			}
+		}
+		raw = raw || 'https://local.tanuki-gecko.ts.net';
 		if (!raw)
 			throw new Error('Service origin is empty');
+
 		let parsed;
 		try {
 			parsed = new URL(raw);
 		} catch {
 			throw new Error('Invalid service origin URL');
 		}
+
 		if (parsed.username || parsed.password)
 			throw new Error('Origin must not include credentials');
 		if ((parsed.pathname && parsed.pathname !== '/') || parsed.search ||
 			parsed.hash) {
-			throw new Error(
-				'Origin must not include path, query, or fragment');
+			throw new Error('Origin must not include path, query, or fragment');
 		}
+
 		const isLocal = parsed.hostname === 'localhost' ||
 			parsed.hostname === '127.0.0.1' ||
 			parsed.hostname === '::1';
 		if (parsed.protocol !== 'https:' && !isLocal)
 			throw new Error('Service origin must use https://');
+
 		const origin = parsed.origin;
-		if (el.value !== origin)
+		if (el && el.value !== origin)
 			el.value = origin;
 		return origin;
 	}
@@ -373,9 +430,7 @@
 		let bin = '';
 		for (let i = 0; i < bytes.length; i++)
 			bin += String.fromCharCode(bytes[i]);
-		return btoa(bin)
-			.replace(/\+/g, '-')
-			.replace(/\//g, '_')
+		return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_')
 			.replace(/=+$/g, '');
 	}
 
@@ -395,15 +450,14 @@
 	}
 
 	async function deriveIdFromKeyAndSalt(keyBytes, saltBytes) {
-		const hkdfKey = await crypto.subtle.importKey('raw', keyBytes, 'HKDF',
-			false, ['deriveBits']);
+		const hkdfKey = await crypto.subtle.importKey(
+			'raw', keyBytes, 'HKDF', false, ['deriveBits']);
 		const bytes = await crypto.subtle.deriveBits({
 			name: 'HKDF',
 			hash: HKDF_HASH,
 			salt: saltBytes,
 			info: HKDF_INFO_ID
-		},
-			hkdfKey, ID_SIZE * 8);
+		}, hkdfKey, ID_SIZE * 8);
 		return new Uint8Array(bytes);
 	}
 
@@ -416,15 +470,13 @@
 		} finally {
 			passwordBytes.fill(0);
 		}
-		return crypto.subtle.deriveKey(
-			{
-				name: 'PBKDF2',
-				salt: saltBytes,
-				iterations: PBKDF2_ITERATIONS,
-				hash: PBKDF2_HASH,
-			},
-			keyMaterial, { name: 'AES-GCM', length: KEY_SIZE * 8 }, false,
-			usages);
+		return crypto.subtle.deriveKey({
+			name: 'PBKDF2',
+			salt: saltBytes,
+			iterations: PBKDF2_ITERATIONS,
+			hash: PBKDF2_HASH,
+		}, keyMaterial, { name: 'AES-GCM', length: KEY_SIZE * 8 }, false,
+		usages);
 	}
 
 	function parseLocationHash(input) {
@@ -435,7 +487,7 @@
 			const maybeUrl = new URL(raw);
 			raw = maybeUrl.hash || '';
 		} catch {
-			// not a URL; continue
+			// not a full URL
 		}
 		if (raw.startsWith('#'))
 			raw = raw.slice(1);
@@ -447,31 +499,34 @@
 		const parts = raw.split('/');
 		if (parts.length !== 2)
 			return null;
+
 		const idPart = parts[0].trim();
 		const keyPart = parts[1].trim();
-		if (!idPart || !keyPart)
+		if (!idPart || !keyPart || !ID_REGEX.test(idPart))
 			return null;
 
-		if (!ID_REGEX.test(idPart) || !keyPart)
-			return null;
 		return { id: idPart, bK: keyPart };
 	}
 
 	async function copyLink() {
-		try {
-			if (!state.link) {
-				setStatus('No link available to copy.', false);
-				return;
-			}
-			await navigator.clipboard.writeText(state.link);
-			setStatus('Link copied to clipboard.', true);
-			setTimeout(() => {
-				if (state.link)
-					setStatus('');
-			}, 1200);
-		} catch (e) {
-			setStatus('Could not copy link: ' + (e.message || e), false);
+		if (!state.link)
+			return;
+		await navigator.clipboard.writeText(state.link);
+	}
+
+	async function copyQrImage() {
+		if (!state.link)
+			return;
+		if (typeof navigator === 'undefined' || !navigator.clipboard ||
+			typeof navigator.clipboard.write !== 'function' ||
+			typeof ClipboardItem !== 'function') {
+			throw new Error('Image clipboard is not available in this browser');
 		}
+
+		const blob = await getQrImageBlob();
+		await navigator.clipboard.write([
+			new ClipboardItem({ [blob.type]: blob })
+		]);
 	}
 
 	async function safeText(res) {
@@ -490,85 +545,80 @@
 				if (current && current !== 'null')
 					hostInput.value = current;
 			} catch (_) {
-				// Ignore environments without window.location.origin support.
+				// ignore
 			}
 		}
 
-		document.addEventListener('DOMContentLoaded', function () {
-			const textarea = $('text');
-			const navToggle = document.querySelector('.nav-toggle');
-			const navLinks = document.querySelector('.nav-links');
+		const createLinks = document.querySelectorAll('[data-create-link]');
+		if (createLinks.length > 0) {
+			let createHref = '/';
+			try {
+				createHref = new URL('/', window.location.href).toString();
+			} catch {
+				createHref = '/';
+			}
+			createLinks.forEach((link) => {
+				link.setAttribute('href', createHref);
+			});
+		}
 
+		document.addEventListener('DOMContentLoaded', function () {
+			const textarea = document.querySelector(
+				'textarea[data-limit-indicator="true"]');
 			if (textarea) {
-				const charCount = document.createElement('div');
+				const indicator = document.createElement('div');
+				const bar = document.createElement('div');
+				const fill = document.createElement('span');
+				const label = document.createElement('div');
 				const byteEncoder = typeof TextEncoder === 'function' ?
 					new TextEncoder() :
 					null;
 				const maxBytes = BLOB_SIZE_MAX - 100;
-				const maxKiBLabel = (maxBytes / 1024).toFixed(2);
-				const toKiB = (bytes) => (bytes / 1024).toFixed(2);
 
-				charCount.classList.add('char-counter');
-				textarea.parentNode.appendChild(charCount);
+				indicator.classList.add('limit-indicator');
+				indicator.hidden = true;
+				bar.classList.add('limit-indicator-bar');
+				fill.classList.add('limit-indicator-fill');
+				label.classList.add('limit-indicator-label');
+				bar.appendChild(fill);
+				indicator.appendChild(bar);
+				indicator.appendChild(label);
+				textarea.parentNode.appendChild(indicator);
 
 				const updateCount = () => {
 					const value = textarea.value || '';
 					const sizeBytes = byteEncoder ?
 						byteEncoder.encode(value).length :
 						value.length;
-					const usageKiB = toKiB(sizeBytes);
+					const usageRatio = maxBytes ? sizeBytes / maxBytes : 0;
 
-					charCount.textContent =
-						maxKiBLabel ?
-							`${usageKiB} of ${maxKiBLabel} KiB` :
-							`${usageKiB} KiB`;
-					charCount.classList.remove('warning', 'danger');
+					indicator.classList.remove('warning', 'danger');
+					if (!value || usageRatio < 0.8) {
+						indicator.hidden = true;
+						fill.style.width = '0%';
+						label.textContent = '';
+						return;
+					}
 
-					if (maxBytes) {
-						const usageRatio = sizeBytes / maxBytes;
-						if (usageRatio > 0.9) {
-							charCount.classList.add('danger');
-						} else if (usageRatio > 0.8) {
-							charCount.classList.add('warning');
-						}
+					indicator.hidden = false;
+					fill.style.width = Math.max(8,
+						Math.min(100, Math.round(usageRatio * 100))) + '%';
+
+					if (usageRatio >= 1) {
+						indicator.classList.add('danger');
+						label.textContent =
+							'Too large. Shorten the secret and try again.';
+					} else if (usageRatio > 0.9) {
+						indicator.classList.add('danger');
+						label.textContent = 'Very close to the limit.';
+					} else {
+						indicator.classList.add('warning');
+						label.textContent = 'Approaching the size limit.';
 					}
 				};
 
 				textarea.addEventListener('input', updateCount);
 				updateCount();
-			}
-
-			if (navToggle && navLinks) {
-				const closeNav = () => {
-					if (!navLinks.classList.contains('is-open'))
-						return;
-					navLinks.classList.remove('is-open');
-					navToggle.classList.remove('is-active');
-				};
-
-				navToggle.addEventListener('click', () => {
-					const isOpen = navLinks.classList.toggle('is-open');
-					navToggle.classList.toggle('is-active', isOpen);
-				});
-
-				navLinks.addEventListener('click', (event) => {
-					if (event.target.classList.contains('nav-link'))
-						closeNav();
-				});
-
-				document.addEventListener('click', (event) => {
-					if (!navLinks.contains(event.target) &&
-						!navToggle.contains(event.target)) {
-						closeNav();
-					}
-				});
-
-				window.addEventListener('resize', () => {
-					if (window.innerWidth > 768) {
-						navLinks.classList.remove('is-open');
-						navToggle.classList.remove('is-active');
-					}
-				});
 			}
 		});
 	}
@@ -591,8 +641,8 @@
 		state,
 		normalizeOrigin,
 		clearLocationHash,
-		setStatus,
 		clearPendingSecret,
+		scrubSensitiveUi,
 		setDecryptionCardVisible,
 		lockTextarea,
 		cloneBytes,
@@ -607,7 +657,11 @@
 		derivePasswordKey,
 		parseLocationHash,
 		copyLink,
+		copyQrImage,
 		safeText,
+		initPopup,
+		showPopup,
 		initCommonUi,
+		bindSensitiveUiScrubbing,
 	};
 })();

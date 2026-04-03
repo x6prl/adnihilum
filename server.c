@@ -218,7 +218,7 @@ static asset_t assets[ASSETS_COUNT] = {
 static const char *asset_file_paths[ASSETS_COUNT] = {
 #if ASSEMBLED_HTML
 	[ASSET_CLIENT_ASSEMBLED_HTML] = "assets/client_assembled.html",
-	[ASSET_CLIENT_ASSEMBLED_HTML] = "assets/client-receive_assembled.html",
+	[ASSET_CLIENT_RECEIVE_ASSEMBLED_HTML] = "assets/client-receive_assembled.html",
 #else
 	[ASSET_CLIENT_HTML] = "assets/client.html",
 	[ASSET_CLIENT_RECEIVE_HTML] = "assets/client-receive.html",
@@ -244,6 +244,7 @@ static const char *asset_file_paths[ASSETS_COUNT] = {
 static const char asset_paths[ASSETS_COUNT][ASSET_PATH_STRING_MAX_SIZE] = {
 #if ASSEMBLED_HTML
 	[ASSET_CLIENT_ASSEMBLED_HTML] = "/",
+	[ASSET_CLIENT_RECEIVE_ASSEMBLED_HTML] = "/receive",
 #else
 	[ASSET_CLIENT_HTML] = "/",
 	[ASSET_CLIENT_RECEIVE_HTML] = "/receive",
