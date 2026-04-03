@@ -182,8 +182,10 @@ typedef struct {
 enum assets_id_t {
 #if ASSEMBLED_HTML
 	ASSET_CLIENT_ASSEMBLED_HTML = 0,
+	ASSET_CLIENT_RECEIVE_ASSEMBLED_HTML,
 #else
 	ASSET_CLIENT_HTML = 0,
+	ASSET_CLIENT_RECEIVE_HTML,
 	ASSET_CLIENT_CSS,
 	ASSET_CLIENT_SHARED_JS,
 	ASSET_CLIENT_SEND_JS,
@@ -199,8 +201,10 @@ static uint8_t *assets_memory;
 static asset_t assets[ASSETS_COUNT] = {
 #if ASSEMBLED_HTML
 	[ASSET_CLIENT_ASSEMBLED_HTML] = { .content_type = _CONTENT_TYPE_HTML },
+	[ASSET_CLIENT_RECEIVE_ASSEMBLED_HTML] = { .content_type = _CONTENT_TYPE_HTML },
 #else
 	[ASSET_CLIENT_HTML] = { .content_type = _CONTENT_TYPE_HTML },
+	[ASSET_CLIENT_RECEIVE_HTML] = { .content_type = _CONTENT_TYPE_HTML },
 	[ASSET_CLIENT_CSS] = { .content_type = _CONTENT_TYPE_CSS },
 	[ASSET_CLIENT_SHARED_JS] = { .content_type = _CONTENT_TYPE_JS },
 	[ASSET_CLIENT_SEND_JS] = { .content_type = _CONTENT_TYPE_JS },
@@ -214,8 +218,10 @@ static asset_t assets[ASSETS_COUNT] = {
 static const char *asset_file_paths[ASSETS_COUNT] = {
 #if ASSEMBLED_HTML
 	[ASSET_CLIENT_ASSEMBLED_HTML] = "assets/client_assembled.html",
+	[ASSET_CLIENT_ASSEMBLED_HTML] = "assets/client-receive_assembled.html",
 #else
 	[ASSET_CLIENT_HTML] = "assets/client.html",
+	[ASSET_CLIENT_RECEIVE_HTML] = "assets/client-receive.html",
 	[ASSET_CLIENT_CSS] = "assets/client.css",
 #if JS_MINIFY
 	[ASSET_CLIENT_SHARED_JS] = "assets/client-shared.min.js",
@@ -240,6 +246,7 @@ static const char asset_paths[ASSETS_COUNT][ASSET_PATH_STRING_MAX_SIZE] = {
 	[ASSET_CLIENT_ASSEMBLED_HTML] = "/",
 #else
 	[ASSET_CLIENT_HTML] = "/",
+	[ASSET_CLIENT_RECEIVE_HTML] = "/receive",
 	[ASSET_CLIENT_CSS] = "/client.css",
 	[ASSET_CLIENT_SHARED_JS] = "/client-shared.js",
 	[ASSET_CLIENT_SEND_JS] = "/client-send.js",
