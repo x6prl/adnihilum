@@ -177,7 +177,50 @@ This project is licensed under the GNU General Public License v3.0. See `LICENSE
 ### Dev tools
 
 - `tools/assemble_html.py` — inlines `client.css`, `qrcode.js`, and `client.js` into `assets/client_assembled.html`. Run `python tools/assemble_html.py` whenever you tweak the web client and want the single-file bundle served by the daemon.
-- `tools/blob_bench.py` — async load generator for the `/blob` API, but not a benchmark. Spins up cleanly inside a virtualenv (`python -m venv venv && source venv/bin/activate`) with `pip install httpx`. Inspect options with `python tools/blob_bench.py --help`; defaults target a local release server on `https://127.0.0.1:8443`.
+- `tools/blob_bench.py` — async load generator for the `/blob` API, useful for quick stress or fault-injection experiments, but not a throughput benchmark.
+- `tools/adnihilum_bench.go` — benchmark client written in Go. The timed phases are:
+  - `status`: repeated `GET /status`, validating JSON and the expected top-level fields.
+  - `write`: repeated `POST /blob/<id>`, timing the write path only; created blobs are cleaned up afterward so the benchmark does not leave garbage in RAM.
+  - `e2e`: `POST -> GET exact payload -> second GET expecting 404`, which exercises one-time semantics end to end.
+
+  The benchmark does a small untimed preflight per phase so one cold TCP/TLS setup does not dominate short runs.
+
+```bash
+go run ./tools/adnihilum_bench.go --help
+```
+
+  Example commands:
+
+```bash
+# Remote HTTPS smoke / deployment view
+go run ./tools/adnihilum_bench.go \
+  --url https://adnihilum.net \
+  --parallelism-list 1,4,16,64
+
+# Local HTTP server ceiling
+go run ./tools/adnihilum_bench.go \
+  --url http://127.0.0.1:8081 \
+  --parallelism-list 1,16,64,256
+
+# Local HTTPS vs HTTP (self-signed cert)
+go run ./tools/adnihilum_bench.go \
+  --url https://127.0.0.1:8443 \
+  --insecure \
+  --parallelism-list 1,16,64,256
+
+# Explicit sweep to find the plateau
+go run ./tools/adnihilum_bench.go \
+  --url https://adnihilum.net \
+  --phases status,write,e2e \
+  --parallelism-list 1,4,16,64,128,256
+
+# Multi-process client to avoid the benchmark becoming the bottleneck
+go run ./tools/adnihilum_bench.go \
+  --url http://127.0.0.1:8081 \
+  --phases status,write \
+  --parallelism-list 64,256,512,1000 \
+  --processes 4
+```
 - `tools/build_android.sh` — Termux-friendly build wrapper that uses the system `clang` and links against `libmicrohttpd` from `$PREFIX`. Invoke it inside Termux after installing the listed dependencies.
 - `tools/build_tests.sh` — quick compiler shortcut for the linear-probing unit test. Produces `build/lp_test`.
 - `tools/minify.sh` — minifies `qrcode.js` and `client.js` into their `.min.js` counterparts using `uglifyjs`. Install the tool globally (`npm install -g uglify-js`) before running the script.

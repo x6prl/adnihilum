@@ -9,3 +9,4 @@ adnihilum.log
 perf.data
 perf.data.old
 gmon.out
+*pycache*
