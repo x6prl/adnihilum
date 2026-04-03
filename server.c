@@ -185,6 +185,9 @@ enum assets_id_t {
 #else
 	ASSET_CLIENT_HTML = 0,
 	ASSET_CLIENT_CSS,
+	ASSET_CLIENT_SHARED_JS,
+	ASSET_CLIENT_SEND_JS,
+	ASSET_CLIENT_RECEIVE_JS,
 	ASSET_CLIENT_JS,
 	ASSET_QRCODE_JS,
 #endif
@@ -199,6 +202,9 @@ static asset_t assets[ASSETS_COUNT] = {
 #else
 	[ASSET_CLIENT_HTML] = { .content_type = _CONTENT_TYPE_HTML },
 	[ASSET_CLIENT_CSS] = { .content_type = _CONTENT_TYPE_CSS },
+	[ASSET_CLIENT_SHARED_JS] = { .content_type = _CONTENT_TYPE_JS },
+	[ASSET_CLIENT_SEND_JS] = { .content_type = _CONTENT_TYPE_JS },
+	[ASSET_CLIENT_RECEIVE_JS] = { .content_type = _CONTENT_TYPE_JS },
 	[ASSET_CLIENT_JS] = { .content_type = _CONTENT_TYPE_JS },
 	[ASSET_QRCODE_JS] = { .content_type = _CONTENT_TYPE_JS },
 #endif
@@ -212,9 +218,15 @@ static const char *asset_file_paths[ASSETS_COUNT] = {
 	[ASSET_CLIENT_HTML] = "assets/client.html",
 	[ASSET_CLIENT_CSS] = "assets/client.css",
 #if JS_MINIFY
+	[ASSET_CLIENT_SHARED_JS] = "assets/client-shared.min.js",
+	[ASSET_CLIENT_SEND_JS] = "assets/client-send.min.js",
+	[ASSET_CLIENT_RECEIVE_JS] = "assets/client-receive.min.js",
 	[ASSET_CLIENT_JS] = "assets/client.min.js",
 	[ASSET_QRCODE_JS] = "assets/qrcode.min.js",
 #else
+	[ASSET_CLIENT_SHARED_JS] = "assets/client-shared.js",
+	[ASSET_CLIENT_SEND_JS] = "assets/client-send.js",
+	[ASSET_CLIENT_RECEIVE_JS] = "assets/client-receive.js",
 	[ASSET_CLIENT_JS] = "assets/client.js",
 	[ASSET_QRCODE_JS] = "assets/qrcode.js",
 #endif
@@ -229,6 +241,9 @@ static const char asset_paths[ASSETS_COUNT][ASSET_PATH_STRING_MAX_SIZE] = {
 #else
 	[ASSET_CLIENT_HTML] = "/",
 	[ASSET_CLIENT_CSS] = "/client.css",
+	[ASSET_CLIENT_SHARED_JS] = "/client-shared.js",
+	[ASSET_CLIENT_SEND_JS] = "/client-send.js",
+	[ASSET_CLIENT_RECEIVE_JS] = "/client-receive.js",
 	[ASSET_CLIENT_JS] = "/client.js",
 	[ASSET_QRCODE_JS] = "/qrcode.js",
 #endif

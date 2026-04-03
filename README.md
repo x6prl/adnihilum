@@ -65,7 +65,7 @@ Alternatively you can use Tor onion-service. Do not pass plaintext data over the
 
 You can control compile-time features via CMake options.
 
-- `JS_MINIFY` (default `OFF`): use the minified JS bundle (`client.min.js`).
+- `JS_MINIFY` (default `OFF`): use the minified JS assets (`client-shared.min.js`, `client-send.min.js`, `client-receive.min.js`, `client.min.js`).
 - `FILELOG` (default `OFF`): write server logs to `adnihilum.log`.
 - `SYSLOG` (default `ON`): send logs to the system logger.
 - `TRACY_ENABLE` (default `OFF`): pull in Tracy client code and instrument the hot paths.
@@ -176,7 +176,7 @@ This project is licensed under the GNU General Public License v3.0. See `LICENSE
 
 ### Dev tools
 
-- `tools/assemble_html.py` — inlines `client.css`, `qrcode.js`, and `client.js` into `assets/client_assembled.html`. Run `python tools/assemble_html.py` whenever you tweak the web client and want the single-file bundle served by the daemon.
+- `tools/assemble_html.py` — inlines `client.css`, `qrcode.js`, `client-shared.js`, `client-send.js`, `client-receive.js`, and `client.js` into `assets/client_assembled.html`. Run `python tools/assemble_html.py` whenever you tweak the web client and want the single-file bundle served by the daemon.
 - `tools/blob_bench.py` — async load generator for the `/blob` API, useful for quick stress or fault-injection experiments, but not a throughput benchmark.
 - `tools/adnihilum_bench.go` — benchmark client written in Go. The timed phases are:
   - `status`: repeated `GET /status`, validating JSON and the expected top-level fields.
@@ -223,7 +223,7 @@ go run ./tools/adnihilum_bench.go \
 ```
 - `tools/build_android.sh` — Termux-friendly build wrapper that uses the system `clang` and links against `libmicrohttpd` from `$PREFIX`. Invoke it inside Termux after installing the listed dependencies.
 - `tools/build_tests.sh` — quick compiler shortcut for the linear-probing unit test. Produces `build/lp_test`.
-- `tools/minify.sh` — minifies `qrcode.js` and `client.js` into their `.min.js` counterparts using `uglifyjs`. Install the tool globally (`npm install -g uglify-js`) before running the script.
+- `tools/minify.sh` — minifies `qrcode.js`, `client-shared.js`, `client-send.js`, `client-receive.js`, and `client.js` into their `.min.js` counterparts using `uglifyjs`. Install the tool globally (`npm install -g uglify-js`) before running the script.
 
 ### Comparison to OneTimeSecret
 

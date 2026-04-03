@@ -18,6 +18,9 @@ HTML_OUT = ASSETS_DIR / "client_assembled.html"
 
 CSS_TAG = '<link rel="stylesheet" href="client.css">'
 QR_TAG = '<script src="qrcode.js"></script>'
+CLIENT_SHARED_TAG = '<script src="client-shared.js"></script>'
+CLIENT_SEND_TAG = '<script src="client-send.js"></script>'
+CLIENT_RECEIVE_TAG = '<script src="client-receive.js"></script>'
 CLIENT_TAG = '<script src="client.js"></script>'
 
 
@@ -39,9 +42,19 @@ def main() -> None:
     html = read_text(HTML_IN)
     css = read_text(CSS_FILE)
     qr = read_text(prefer_min_js("qrcode"))
+    client_shared = read_text(prefer_min_js("client-shared"))
+    client_send = read_text(prefer_min_js("client-send"))
+    client_receive = read_text(prefer_min_js("client-receive"))
     client = read_text(prefer_min_js("client"))
 
-    for tag in (CSS_TAG, QR_TAG, CLIENT_TAG):
+    for tag in (
+        CSS_TAG,
+        QR_TAG,
+        CLIENT_SHARED_TAG,
+        CLIENT_SEND_TAG,
+        CLIENT_RECEIVE_TAG,
+        CLIENT_TAG,
+    ):
         if tag not in html:
             sys.exit(f"expected '{tag}' in {HTML_IN}")
 
@@ -51,11 +64,17 @@ def main() -> None:
         "<script>(function(){\n"
         f"{qr.rstrip()}\n"
         'if (typeof globalThis !== "undefined" && typeof QRCode !== "undefined") { globalThis.QRCode = QRCode; }\n'
+        f"{client_shared.rstrip()}\n"
+        f"{client_send.rstrip()}\n"
+        f"{client_receive.rstrip()}\n"
         f"{client.rstrip()}\n"
         "})();</script>"
     )
 
     html = html.replace(QR_TAG, bundle, 1)
+    html = html.replace(CLIENT_SHARED_TAG, "", 1)
+    html = html.replace(CLIENT_SEND_TAG, "", 1)
+    html = html.replace(CLIENT_RECEIVE_TAG, "", 1)
     html = html.replace(CLIENT_TAG, "", 1)
 
     HTML_OUT.write_text(html, encoding="utf-8")
