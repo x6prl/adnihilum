@@ -1116,16 +1116,19 @@ int main(int argc, char **argv)
 					  REPLACE_UPTIME_CH);
 	if (!html_uptime_ptr) {
 		LOGE("Cannot find the point of uptime setting in HTML.");
+		goto cleanup;
 	}
 	html_served_ptr = (char *)find_16(assets[0].data, assets[0].size,
 					  REPLACE_SERVED_CH);
 	if (!html_served_ptr) {
 		LOGE("Cannot find the point of served setting in HTML.");
+		goto cleanup;
 	}
 	html_version_ptr = (char *)find_16(assets[0].data, assets[0].size,
 					   REPLACE_VERSION_CH);
 	if (!html_version_ptr) {
 		LOGE("Cannot find the point of version setting in HTML.");
+		goto cleanup;
 	}
 
 	req_ctx_memory_size = ctxa_footprint(REQUESTS_MAX);
