@@ -37,7 +37,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <arpa/inet.h>
-#include <errno.h>
 #include <netinet/in.h>
 #include <signal.h>
 #include <stdarg.h>
@@ -50,9 +49,11 @@
 
 #include "version.h"
 #include "log.h"
-#include "debug_stuff.h"
 #include "balloc.h"
 #include "storage.h"
+#if DEBUG
+#include "debug_stuff.h"
+#endif
 #if DEBOUNCER
 #include "debouncer.h"
 #endif
