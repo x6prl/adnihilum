@@ -6,6 +6,9 @@ Keep it tiny and purpose-built for the current project layout.
 
 from __future__ import annotations
 
+import base64
+import hashlib
+import re
 import sys
 from pathlib import Path
 
@@ -24,12 +27,19 @@ CLIENT_SHARED_TAG = '<script src="client-shared.js"></script>'
 CLIENT_SEND_TAG = '<script src="client-send.js"></script>'
 CLIENT_RECEIVE_TAG = '<script src="client-receive.js"></script>'
 CLIENT_TAG = '<script src="client.js"></script>'
+STYLE_RE = re.compile(r"<style>(.*?)</style>", re.DOTALL)
+SCRIPT_RE = re.compile(r"<script>(.*?)</script>", re.DOTALL)
 
 
 def read_text(path: Path) -> str:
     if not path.is_file():
         sys.exit(f"missing required file: {path}")
     return path.read_text(encoding="utf-8")
+
+
+def hash_block_sha256(content: str) -> str:
+    digest = hashlib.sha256(content.encode("utf-8")).digest()
+    return "sha256-" + base64.b64encode(digest).decode("ascii")
 
 
 def prefer_min_js(stem: str) -> Path:
@@ -54,7 +64,7 @@ def build_page(
     include_qr: bool,
     page_script_tag: str,
     page_script: str,
-) -> None:
+) -> str:
     html = read_text(html_in)
     css = read_text(CSS_FILE)
     client_shared = read_text(prefer_min_js("client-shared"))
@@ -99,23 +109,58 @@ def build_page(
 
     html_out.write_text(html, encoding="utf-8")
     print(f"Wrote {html_out}")
+    return html
+
+
+def write_csp_header(send_html: str, receive_html: str, output_path: Path) -> None:
+    script_hashes = sorted({
+        hash_block_sha256(match.group(1))
+        for html in (send_html, receive_html)
+        for match in SCRIPT_RE.finditer(html)
+    })
+    style_hashes = sorted({
+        hash_block_sha256(match.group(1))
+        for html in (send_html, receive_html)
+        for match in STYLE_RE.finditer(html)
+    })
+
+    output_path.write_text(
+        "\n".join([
+            "#ifndef ADNIHILUM_CSP_HASHES_H",
+            "#define ADNIHILUM_CSP_HASHES_H",
+            "",
+            '#define ADN_CSP_SCRIPT_HASHES "' +
+            " ".join(f"'{item}'" for item in script_hashes) + '"',
+            '#define ADN_CSP_STYLE_HASHES "' +
+            " ".join(f"'{item}'" for item in style_hashes) + '"',
+            "",
+            "#endif",
+            "",
+        ]),
+        encoding="utf-8",
+    )
+    print(f"Wrote {output_path}")
 
 
 def main() -> None:
-    build_page(
+    send_html = build_page(
         html_in=SEND_HTML_IN,
         html_out=SEND_HTML_OUT,
         include_qr=True,
         page_script_tag=CLIENT_SEND_TAG,
         page_script=read_text(prefer_min_js("client-send")),
     )
-    build_page(
+    receive_html = build_page(
         html_in=RECEIVE_HTML_IN,
         html_out=RECEIVE_HTML_OUT,
         include_qr=False,
         page_script_tag=CLIENT_RECEIVE_TAG,
         page_script=read_text(prefer_min_js("client-receive")),
     )
+    if len(sys.argv) == 2:
+        write_csp_header(send_html, receive_html, Path(sys.argv[1]))
+    elif len(sys.argv) != 1:
+        sys.exit("usage: assemble_html.py [csp_header_out]")
 
 
 if __name__ == "__main__":

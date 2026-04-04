@@ -54,6 +54,9 @@
 #if DEBUG
 #include "debug_stuff.h"
 #endif
+#if ASSEMBLED_HTML
+#include "csp_hashes.h"
+#endif
 #if DEBOUNCER
 #include "debouncer.h"
 #endif
@@ -596,6 +599,19 @@ static enum MHD_Result send_response(struct MHD_Connection *c, unsigned code,
 	case HP_HTML_VIEWER:
 		MHD_add_response_header(resp, "Referrer-Policy", "no-referrer");
 		MHD_add_response_header(resp, "X-Frame-Options", "DENY");
+#if ASSEMBLED_HTML
+		MHD_add_response_header(
+			resp, "Content-Security-Policy",
+			"default-src 'self'; "
+			"script-src 'self' " ADN_CSP_SCRIPT_HASHES "; "
+			"style-src 'self' " ADN_CSP_STYLE_HASHES "; "
+			"img-src 'self' data:; "
+			"connect-src 'self'; "
+			"object-src 'none'; "
+			"base-uri 'none'; "
+			"frame-ancestors 'none'; "
+			"form-action 'self'");
+#else
 		MHD_add_response_header(
 			resp, "Content-Security-Policy",
 			"default-src 'self'; "
@@ -607,6 +623,7 @@ static enum MHD_Result send_response(struct MHD_Connection *c, unsigned code,
 			"base-uri 'none'; "
 			"frame-ancestors 'none'; "
 			"form-action 'self'");
+#endif
 		MHD_add_response_header(resp, "Cross-Origin-Opener-Policy",
 					"same-origin");
 		MHD_add_response_header(resp, "Cross-Origin-Resource-Policy",

@@ -79,10 +79,12 @@ if(ASSEMBLED_HTML)
     "uglifyjs (from uglify-js) for tools/minify.sh"
   )
   find_program(PYTHON3_EXECUTABLE python3 REQUIRED)
+  set(CSP_HASHES_HEADER ${CMAKE_CURRENT_BINARY_DIR}/csp_hashes.h)
 
   add_custom_target(client_assets ALL
     COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/tools/minify.sh
     COMMAND ${PYTHON3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/assemble_html.py
+      ${CSP_HASHES_HEADER}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     COMMENT "Minifying and assembling client assets"
   )
