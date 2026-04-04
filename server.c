@@ -588,11 +588,25 @@ static enum MHD_Result send_response(struct MHD_Connection *c, unsigned code,
 	MHD_add_response_header(resp, "X-Content-Type-Options", "nosniff");
 	if (content_type)
 		MHD_add_response_header(resp, "Content-Type", content_type);
+	// TODO: think about moving headers to the nginx side
+	MHD_add_response_header(resp, "Strict-Transport-Security",
+				"max-age=31536000");
 
 	switch (header_profile) {
 	case HP_HTML_VIEWER:
 		MHD_add_response_header(resp, "Referrer-Policy", "no-referrer");
 		MHD_add_response_header(resp, "X-Frame-Options", "DENY");
+		MHD_add_response_header(
+			resp, "Content-Security-Policy",
+			"default-src 'self'; "
+			"script-src 'self'; "
+			"style-src 'self'; "
+			"img-src 'self' data:; "
+			"connect-src 'self'; "
+			"object-src 'none'; "
+			"base-uri 'none'; "
+			"frame-ancestors 'none'; "
+			"form-action 'self'");
 		MHD_add_response_header(resp, "Cross-Origin-Opener-Policy",
 					"same-origin");
 		MHD_add_response_header(resp, "Cross-Origin-Resource-Policy",
@@ -1081,7 +1095,6 @@ int main(int argc, char **argv)
 			return EXIT_SUCCESS;
 		}
 	}
-
 	log_init();
 	LOG("Ad Nihilum init. Version %s", AD_NIHILUM_VERSION);
 
