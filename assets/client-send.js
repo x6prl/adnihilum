@@ -254,7 +254,6 @@
 		const btnCopyQrImage = shared.$('btnCopyQrImage');
 		const optionalPasswordField = shared.$('optionalPassword');
 		const textArea = shared.$('text');
-		const hostInput = shared.$('host');
 
 		if (!btnGetLink || !btnCopyLink || !btnCopyQrImage ||
 			!optionalPasswordField || !textArea) {
@@ -293,19 +292,6 @@
 
 		textArea.addEventListener('input', clearGeneratedState);
 		optionalPasswordField.addEventListener('input', clearGeneratedState);
-
-		if (hostInput) {
-			hostInput.addEventListener('change', () => {
-				if (!shared.state.id || !shared.state.bK)
-					return;
-				try {
-					const origin = shared.getOrigin();
-					shared.setLink(origin, shared.state.id, shared.state.bK);
-				} catch {
-					// keep the last valid link until the host is corrected
-				}
-			});
-		}
 
 		resetPrimaryButton();
 	}

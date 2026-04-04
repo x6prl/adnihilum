@@ -70,7 +70,8 @@
 		try {
 			if (typeof history !== 'undefined' &&
 				typeof history.replaceState === 'function') {
-				const path = window.location.pathname + window.location.search;
+				const path = window.location.pathname +
+					window.location.search;
 				history.replaceState(null, '', path);
 			} else {
 				window.location.hash = '';
@@ -128,7 +129,8 @@
 			deCard.classList.toggle('is-visible', !!visible);
 			const stack = deCard.closest('.stack');
 			if (stack)
-				stack.classList.toggle('stack-decryption-active', !!visible);
+				stack.classList.toggle('stack-decryption-active',
+					!!visible);
 		}
 		if (!visible) {
 			const pwd = $('decryptionPassword');
@@ -141,10 +143,12 @@
 		['text', 'optionalPassword', 'decryptionPassword', 'generatedUrl']
 			.forEach((id) => {
 				const field = $(id);
-				if (!field || typeof field.value !== 'string' || !field.value)
+				if (!field || typeof field.value !== 'string' ||
+					!field.value)
 					return;
 				field.value = '';
-				field.dispatchEvent(new Event('input', { bubbles: true }));
+				field.dispatchEvent(
+					new Event('input', { bubbles: true }));
 			});
 		setLink(null, null, null);
 		setDecryptionCardVisible(false);
@@ -160,9 +164,8 @@
 
 		const scrubSoon = () => {
 			if (typeof window.requestAnimationFrame === 'function') {
-				window.requestAnimationFrame(() => {
-					scrubSensitiveUi();
-				});
+				window.requestAnimationFrame(
+					() => { scrubSensitiveUi(); });
 			} else {
 				setTimeout(scrubSensitiveUi, 0);
 			}
@@ -201,7 +204,8 @@
 			if (state.originalPlaceholder === '') {
 				textField.removeAttribute('placeholder');
 			} else {
-				textField.setAttribute('placeholder', state.originalPlaceholder);
+				textField.setAttribute('placeholder',
+					state.originalPlaceholder);
 			}
 		}
 
@@ -233,11 +237,14 @@
 	function updateQr() {
 		const wrap = $('qrWrap');
 		const container = $('qrCode');
+		const copyQrBtn = $('btnCopyQrImage');
 		if (!wrap || !container)
 			return;
 
 		if (!state.link) {
 			wrap.hidden = true;
+			if (copyQrBtn)
+				copyQrBtn.hidden = true;
 			if (qrInstance && typeof qrInstance.clear === 'function')
 				qrInstance.clear();
 			container.innerHTML = '';
@@ -264,9 +271,13 @@
 			}
 			qrInstance.makeCode(state.link);
 			wrap.hidden = false;
+			if (copyQrBtn)
+				copyQrBtn.hidden = false;
 		} catch (err) {
 			console.error(err);
 			wrap.hidden = true;
+			if (copyQrBtn)
+				copyQrBtn.hidden = true;
 			if (qrInstance && typeof qrInstance.clear === 'function')
 				qrInstance.clear();
 			container.innerHTML = '';
@@ -286,7 +297,8 @@
 					if (blob)
 						resolve(blob);
 					else
-						reject(new Error('Could not prepare QR image'));
+						reject(new Error(
+							'Could not prepare QR image'));
 				}, 'image/png');
 			});
 		}
@@ -302,9 +314,9 @@
 
 		const svg = container.querySelector('svg');
 		if (svg) {
-			return Promise.resolve(new Blob(
-				[new XMLSerializer().serializeToString(svg)],
-				{ type: 'image/svg+xml' }));
+			return Promise.resolve(
+				new Blob([new XMLSerializer().serializeToString(svg)],
+					{ type: 'image/svg+xml' }));
 		}
 
 		return Promise.reject(new Error('QR code is not available'));
@@ -362,9 +374,6 @@
 				copyBtn.hidden = false;
 			if (copyQrBtn)
 				copyQrBtn.hidden = false;
-			const host = $('host');
-			if (host)
-				host.value = normalized;
 		} catch (err) {
 			console.error(err);
 			reset();
@@ -381,22 +390,14 @@
 	}
 
 	function getOrigin() {
-		const el = $('host');
+		const protocol = window.location.protocol || '';
 		let raw = '';
 
-		if (el && el.value.length > 6)
-			raw = el.value.trim();
-		if (!raw) {
-			try {
-				if (window.location.origin && window.location.origin !== 'null')
-					raw = window.location.origin;
-			} catch (_) {
-				// ignore
-			}
-		}
-		raw = raw || 'https://local.tanuki-gecko.ts.net';
-		if (!raw)
-			throw new Error('Service origin is empty');
+		if (protocol === 'file:')
+			raw = 'https://adnihilum.net';
+		else if (window.location.origin &&
+			window.location.origin !== 'null')
+			raw = window.location.origin;
 
 		let parsed;
 		try {
@@ -409,19 +410,16 @@
 			throw new Error('Origin must not include credentials');
 		if ((parsed.pathname && parsed.pathname !== '/') || parsed.search ||
 			parsed.hash) {
-			throw new Error('Origin must not include path, query, or fragment');
+			throw new Error(
+				'Origin must not include path, query, or fragment');
 		}
 
 		const isLocal = parsed.hostname === 'localhost' ||
-			parsed.hostname === '127.0.0.1' ||
-			parsed.hostname === '::1';
+			parsed.hostname === '127.0.0.1';
 		if (parsed.protocol !== 'https:' && !isLocal)
 			throw new Error('Service origin must use https://');
 
-		const origin = parsed.origin;
-		if (el && el.value !== origin)
-			el.value = origin;
-		return origin;
+		return parsed.origin;
 	}
 
 	function base64UrlEncode(bytes) {
@@ -430,7 +428,9 @@
 		let bin = '';
 		for (let i = 0; i < bytes.length; i++)
 			bin += String.fromCharCode(bytes[i]);
-		return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_')
+		return btoa(bin)
+			.replace(/\+/g, '-')
+			.replace(/\//g, '_')
 			.replace(/=+$/g, '');
 	}
 
@@ -450,14 +450,15 @@
 	}
 
 	async function deriveIdFromKeyAndSalt(keyBytes, saltBytes) {
-		const hkdfKey = await crypto.subtle.importKey(
-			'raw', keyBytes, 'HKDF', false, ['deriveBits']);
+		const hkdfKey = await crypto.subtle.importKey('raw', keyBytes, 'HKDF',
+			false, ['deriveBits']);
 		const bytes = await crypto.subtle.deriveBits({
 			name: 'HKDF',
 			hash: HKDF_HASH,
 			salt: saltBytes,
 			info: HKDF_INFO_ID
-		}, hkdfKey, ID_SIZE * 8);
+		},
+			hkdfKey, ID_SIZE * 8);
 		return new Uint8Array(bytes);
 	}
 
@@ -470,13 +471,15 @@
 		} finally {
 			passwordBytes.fill(0);
 		}
-		return crypto.subtle.deriveKey({
-			name: 'PBKDF2',
-			salt: saltBytes,
-			iterations: PBKDF2_ITERATIONS,
-			hash: PBKDF2_HASH,
-		}, keyMaterial, { name: 'AES-GCM', length: KEY_SIZE * 8 }, false,
-		usages);
+		return crypto.subtle.deriveKey(
+			{
+				name: 'PBKDF2',
+				salt: saltBytes,
+				iterations: PBKDF2_ITERATIONS,
+				hash: PBKDF2_HASH,
+			},
+			keyMaterial, { name: 'AES-GCM', length: KEY_SIZE * 8 }, false,
+			usages);
 	}
 
 	function parseLocationHash(input) {
@@ -520,13 +523,13 @@
 		if (typeof navigator === 'undefined' || !navigator.clipboard ||
 			typeof navigator.clipboard.write !== 'function' ||
 			typeof ClipboardItem !== 'function') {
-			throw new Error('Image clipboard is not available in this browser');
+			throw new Error(
+				'Image clipboard is not available in this browser');
 		}
 
 		const blob = await getQrImageBlob();
-		await navigator.clipboard.write([
-			new ClipboardItem({ [blob.type]: blob })
-		]);
+		await navigator.clipboard.write(
+			[new ClipboardItem({ [blob.type]: blob })]);
 	}
 
 	async function safeText(res) {
@@ -538,28 +541,17 @@
 	}
 
 	function initCommonUi() {
-		const hostInput = $('host');
-		if (hostInput) {
-			try {
-				const current = window.location.origin;
-				if (current && current !== 'null')
-					hostInput.value = current;
-			} catch (_) {
-				// ignore
-			}
-		}
-
 		const createLinks = document.querySelectorAll('[data-create-link]');
 		if (createLinks.length > 0) {
 			let createHref = '/';
 			try {
-				createHref = new URL('/', window.location.href).toString();
+				createHref =
+					new URL('/', window.location.href).toString();
 			} catch {
 				createHref = '/';
 			}
-			createLinks.forEach((link) => {
-				link.setAttribute('href', createHref);
-			});
+			createLinks.forEach(
+				(link) => { link.setAttribute('href', createHref); });
 		}
 
 		document.addEventListener('DOMContentLoaded', function () {
@@ -587,10 +579,12 @@
 
 				const updateCount = () => {
 					const value = textarea.value || '';
-					const sizeBytes = byteEncoder ?
-						byteEncoder.encode(value).length :
-						value.length;
-					const usageRatio = maxBytes ? sizeBytes / maxBytes : 0;
+					const sizeBytes =
+						byteEncoder ? byteEncoder.encode(value)
+							.length :
+							value.length;
+					const usageRatio =
+						maxBytes ? sizeBytes / maxBytes : 0;
 
 					indicator.classList.remove('warning', 'danger');
 					if (!value || usageRatio < 0.8) {
@@ -601,8 +595,13 @@
 					}
 
 					indicator.hidden = false;
-					fill.style.width = Math.max(8,
-						Math.min(100, Math.round(usageRatio * 100))) + '%';
+					fill.style.width =
+						Math.max(
+							8,
+							Math.min(100,
+								Math.round(usageRatio *
+									100))) +
+						'%';
 
 					if (usageRatio >= 1) {
 						indicator.classList.add('danger');
@@ -610,10 +609,12 @@
 							'Too large. Shorten the secret and try again.';
 					} else if (usageRatio > 0.9) {
 						indicator.classList.add('danger');
-						label.textContent = 'Very close to the limit.';
+						label.textContent =
+							'Very close to the limit.';
 					} else {
 						indicator.classList.add('warning');
-						label.textContent = 'Approaching the size limit.';
+						label.textContent =
+							'Approaching the size limit.';
 					}
 				};
 

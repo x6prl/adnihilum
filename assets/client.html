@@ -64,11 +64,137 @@
                     </div>
                 </div>
             </section>
-            <section>
-                Key features
+
+            <section class="info-section info-section-features" aria-labelledby="key-features-title">
+                <div class="info-hero">
+                    <div class="eyebrow">Key Features</div>
+                    <h2 id="key-features-title">Secure sharing for information that should not linger.</h2>
+                    <p>
+                        Ad Nihilum is designed for sensitive exchanges that require more
+                        control, less exposure, and a cleaner path from sender to recipient.
+                    </p>
+                </div>
+
+                <div class="feature-grid">
+                    <article class="feature-card">
+                        <div class="feature-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8">
+                                <path d="M12 3l7 4v5c0 5-3.5 7.5-7 9-3.5-1.5-7-4-7-9V7l7-4z"></path>
+                                <path d="M9.5 12.5l1.8 1.8 3.7-4.1"></path>
+                            </svg>
+                        </div>
+                        <h3>Private delivery</h3>
+                        <p>Share passwords, tokens, access codes, and confidential notes through a flow built specifically for sensitive data.</p>
+                    </article>
+
+                    <article class="feature-card">
+                        <div class="feature-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8">
+                                <path d="M12 8v5l3 2"></path>
+                                <circle cx="12" cy="12" r="8"></circle>
+                            </svg>
+                        </div>
+                        <h3>Ephemeral by design</h3>
+                        <p>Secrets disappear after the first successful retrieval or when the server-side lifetime runs out.</p>
+                    </article>
+
+                    <article class="feature-card">
+                        <div class="feature-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8">
+                                <rect x="5" y="11" width="14" height="10" rx="2"></rect>
+                                <path d="M8 11V8a4 4 0 118 0v3"></path>
+                            </svg>
+                        </div>
+                        <h3>Controlled access</h3>
+                        <p>Add an optional password layer so the link alone is not enough to reveal the message.</p>
+                    </article>
+
+                    <article class="feature-card feature-card-wide">
+                        <div class="feature-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8">
+                                <path d="M4 7h16"></path>
+                                <path d="M4 12h10"></path>
+                                <path d="M4 17h7"></path>
+                                <path d="M17 14l3 3-3 3"></path>
+                            </svg>
+                        </div>
+                        <h3>Reduced exposure across everyday channels</h3>
+                        <p>Keep sensitive information out of long email threads, chat histories, shared docs, and screenshots that are difficult to control later.</p>
+                    </article>
+
+                    <article class="feature-card feature-card-wide">
+                        <div class="feature-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8">
+                                <path d="M5 12h14"></path>
+                                <path d="M13 6l6 6-6 6"></path>
+                            </svg>
+                        </div>
+                        <h3>Fast, low-friction sharing</h3>
+                        <p>Create a protected share in seconds and move information where it needs to go without breaking the workflow around it.</p>
+                    </article>
+
+                    <article class="feature-card feature-card-wide">
+                        <div class="feature-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8">
+                                <path d="M4 19h16"></path>
+                                <path d="M6 15l4-4 3 3 5-6"></path>
+                            </svg>
+                        </div>
+                        <h3>Built for real operational use</h3>
+                        <p>Useful for administrators, developers, support staff, and anyone who handles sensitive information as part of daily work.</p>
+                    </article>
+                </div>
+
+                <div class="info-band">
+                    <div class="info-panel">
+                        <h3>Why it stands out</h3>
+                        <ul class="info-list">
+                            <li>Client-side encryption keeps the decryption key out of the server.</li>
+                            <li>Single-use retrieval and expiration reduce unnecessary persistence.</li>
+                            <li>Simple enough for quick sharing, serious enough for confidential data.</li>
+                        </ul>
+                    </div>
+                    <div class="info-panel info-panel-stat">
+                        <strong>Less exposure</strong>
+                        <span>A cleaner alternative to sending secrets through channels that were never designed for them.</span>
+                    </div>
+                </div>
             </section>
-            <section>
-                How it works
+
+            <section class="info-section" aria-labelledby="how-it-works-title">
+                <div class="info-hero">
+                    <div class="eyebrow">How It Works</div>
+                    <h2 id="how-it-works-title">Three steps from secret creation to disappearance.</h2>
+                    <p>
+                        The workflow is built to stay short: encrypt in the browser,
+                        share the link, then let the stored blob vanish after use.
+                    </p>
+                </div>
+
+                <div class="step-grid">
+                    <article class="step-card">
+                        <span class="step-index">01</span>
+                        <h3>Compose and encrypt locally</h3>
+                        <p>Write the secret here. The browser encrypts it before upload, and the key stays in the link fragment instead of going to the server.</p>
+                    </article>
+
+                    <article class="step-card">
+                        <span class="step-index">02</span>
+                        <h3>Share the generated link</h3>
+                        <p>Send the resulting link to the recipient. If needed, share the optional password through a different channel.</p>
+                    </article>
+
+                    <article class="step-card">
+                        <span class="step-index">03</span>
+                        <h3>Open once, then lose access</h3>
+                        <p>When the recipient opens the full link, the secret is retrieved, decrypted in the browser, and removed from the server after the first successful fetch.</p>
+                    </article>
+                </div>
+
+                <div class="info-panel info-panel-inline">
+                    <h3>Operational note</h3>
+                    <p>The server stores encrypted blobs in RAM with a fixed time limit, so anything not opened still ages out instead of lingering indefinitely.</p>
+                </div>
             </section>
         </main>
 
@@ -76,6 +202,17 @@
             <div class="footer-block">
                 <strong>Ad Nihilum</strong>
                 <p>A secure drop for confidential messages that can be opened once and then vanish.</p>
+                <div class="footer-meta" aria-label="Service metadata">
+                    <p class="footer-version">
+                        Version <span>VVVVVVVVVVVVVVVV</span>
+                    </p>
+                    <p class="footer-version">
+                        Uptime <span>UUUUUUUUUUUUUUUU</span>
+                    </p>
+                    <p class="footer-version">
+                        Secrets Served <span>SSSSSSSSSSSSSSSS</span>
+                    </p>
+                </div>
             </div>
             <div class="footer-links">
                 <a href="https://github.com/x6prl/adnihilum/">GitHub</a>
@@ -96,12 +233,6 @@
                 </div>
             </form>
         </dialog>
-
-        <div class="runtime-meta" aria-hidden="true">
-            <span>UUUUUUUUUUUUUUUU</span>
-            <span>SSSSSSSSSSSSSSSS</span>
-            <span>VVVVVVVVVVVVVVVV</span>
-        </div>
     </div>
 
     <script src="qrcode.js"></script>
