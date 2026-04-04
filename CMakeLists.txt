@@ -73,7 +73,25 @@ endif()
 
 configure_file(version.h.in version.h @ONLY)
 
+if(ASSEMBLED_HTML)
+  message(STATUS
+    "ASSEMBLED_HTML requires python3 for tools/assemble_html.py and "
+    "uglifyjs (from uglify-js) for tools/minify.sh"
+  )
+  find_program(PYTHON3_EXECUTABLE python3 REQUIRED)
+
+  add_custom_target(client_assets ALL
+    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/tools/minify.sh
+    COMMAND ${PYTHON3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/assemble_html.py
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMENT "Minifying and assembling client assets"
+  )
+endif()
+
 add_executable(adnihilum server.c storage.c log.c)
+if(ASSEMBLED_HTML)
+  add_dependencies(adnihilum client_assets)
+endif()
 target_include_directories(adnihilum PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_compile_definitions(adnihilum PRIVATE
   $<$<BOOL:${JS_MINIFY}>:JS_MINIFY=1>

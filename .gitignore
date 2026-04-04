@@ -4,6 +4,7 @@ build/*
 .cache
 assets/sodium.js
 assets/*.min.js
+assets/*assembled.html
 epha.log
 adnihilum.log
 perf.data
