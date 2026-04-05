@@ -4,11 +4,7 @@
 
 ## Demo
 
-https://local.tanuki-gecko.ts.net/ 
-
-https://local.tanuki-gecko.ts.net/status 
-
-The instance is only sometimes available because it runs from my laptop.
+https://adnihilum.net/ 
 
 ## Features
 
