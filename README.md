@@ -29,7 +29,7 @@ cmake --build build -j
 ./build/adnihilum --port 8443 --cert cert.pem --key key.pem
 ```
 
-The client UI is served from `client.html`. You can host it statically or let the bundled server deliver it from the root endpoint.
+The client UI is served from `a.html` and `b.html`. You can host it statically or let the bundled server deliver it from `/a/` and `/b/`.
 
 ## Local quick-up using Tailscale
 
@@ -68,7 +68,6 @@ You can control compile-time features via CMake options.
 - `STATISTICS` (default `OFF`): track detailed storage allocator, request, and debouncer counters (dumped to the log on shutdown). Also makes `/status` more verbose.
 - `LOCK_MEMORY_TO_RAM` (default `OFF`): call `mlock` on storage buffers to avoid swapping.
 - `TAILSCALE` (default `OFF`): trust the `X-Forwarded-For` header from Tailscale funnel.
-- `ASSEMBLED_HTML` (default `ON`): serve the pre-built `client_assembled.html` asset.
 - `DEBOUNCER` (default `ON`): enable simple per-client request debouncing.
 - `SIMD_X86` (default `ON`): compile AVX2/SSE-accelerated code paths.
 - `SIMD_ARM` (default `OFF`): compile ARM NEON code paths for capable devices.
@@ -172,7 +171,6 @@ This project is licensed under the GNU General Public License v3.0. See `LICENSE
 
 ### Dev tools
 
-- `tools/assemble_html.py` — inlines `client.css`, `qrcode.js`, `client-shared.js`, `client-send.js`, `client-receive.js`, and `client.js` into `assets/client_assembled.html`. Run `python tools/assemble_html.py` whenever you tweak the web client and want the single-file bundle served by the daemon.
 - `tools/blob_bench.py` — async load generator for the `/blob` API, useful for quick stress or fault-injection experiments, but not a throughput benchmark.
 - `tools/adnihilum_bench.go` — benchmark client written in Go. The timed phases are:
   - `status`: repeated `GET /status`, validating JSON and the expected top-level fields.

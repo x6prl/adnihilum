@@ -64,6 +64,28 @@
 		return origin.replace(/\/+$/, '');
 	}
 
+	function getClientBasePath() {
+		if (typeof document !== 'undefined') {
+			const configuredBase = document.documentElement.dataset.clientBase ||
+				(document.body ? document.body.dataset.clientBase : '');
+			if (configuredBase && /^\/[A-Za-z0-9._-]+$/.test(configuredBase))
+				return configuredBase.replace(/\/+$/, '');
+		}
+
+		const pathname = window.location.pathname || '';
+		if (pathname === '/a' || pathname.startsWith('/a/'))
+			return '/a';
+		if (pathname === '/b' || pathname.startsWith('/b/'))
+			return '/b';
+		return '';
+	}
+
+	function buildClientUrl(path) {
+		if (typeof path !== 'string' || !path.startsWith('/'))
+			throw new Error('Client URL path must start with /');
+		return normalizeOrigin(getOrigin()) + getClientBasePath() + path;
+	}
+
 	function clearLocationHash() {
 		if (typeof window === 'undefined')
 			return;
@@ -351,7 +373,6 @@
 		let keyBytes = null;
 		let idBytes = null;
 		try {
-			const normalized = normalizeOrigin(origin);
 			keyBytes = base64UrlDecode(bK);
 			if (!keyBytes || keyBytes.length !== KEY_SIZE)
 				throw new Error('Key length mismatch');
@@ -361,8 +382,8 @@
 
 			const keyBase64Url = base64UrlEncode(keyBytes);
 			const idBase64Url = base64UrlEncode(idBytes);
-			state.link = normalized + '/receive#' + idBase64Url + '/' +
-				keyBase64Url;
+			state.link = buildClientUrl('/receive') + '#' + idBase64Url +
+				'/' + keyBase64Url;
 			state.id = idBase64Url;
 			state.bK = keyBase64Url;
 
@@ -543,12 +564,11 @@
 	function initCommonUi() {
 		const createLinks = document.querySelectorAll('[data-create-link]');
 		if (createLinks.length > 0) {
-			let createHref = '/';
+			let createHref = getClientBasePath() + '/';
 			try {
-				createHref =
-					new URL('/', window.location.href).toString();
+				createHref = buildClientUrl('/');
 			} catch {
-				createHref = '/';
+				createHref = getClientBasePath() + '/';
 			}
 			createLinks.forEach(
 				(link) => { link.setAttribute('href', createHref); });
@@ -641,6 +661,8 @@
 		isMacLike,
 		state,
 		normalizeOrigin,
+		getClientBasePath,
+		buildClientUrl,
 		clearLocationHash,
 		clearPendingSecret,
 		scrubSensitiveUi,

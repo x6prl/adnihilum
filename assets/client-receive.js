@@ -75,7 +75,6 @@
 		let derivedIdBytes = null;
 
 		try {
-			const origin = shared.getOrigin();
 			keyBytes = shared.base64UrlDecode(info.bK);
 			if (keyBytes.length !== shared.KEY_SIZE)
 				throw new Error('Key length mismatch');
@@ -83,8 +82,8 @@
 			if (!idBytes || idBytes.length !== shared.ID_SIZE)
 				throw new Error('ID length mismatch');
 
-			const url = shared.normalizeOrigin(origin) + '/blob/' +
-				shared.bytesToHex(idBytes);
+			const url = shared.buildClientUrl('/blob/' +
+				shared.bytesToHex(idBytes));
 			const res = await fetch(url);
 			if (!res.ok) {
 				const responseText = await shared.safeText(res);

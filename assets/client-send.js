@@ -183,8 +183,8 @@
 				return;
 			}
 
-			const url = shared.normalizeOrigin(origin) + '/blob/' +
-				shared.bytesToHex(idBytes);
+			const url = shared.buildClientUrl('/blob/' +
+				shared.bytesToHex(idBytes));
 			const res = await fetch(url, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/octet-stream' },

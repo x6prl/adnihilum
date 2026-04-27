@@ -17,7 +17,6 @@ option(TRACY_ENABLE "Enable Tracy profiler instrumentation" OFF)
 option(STATISTICS "Enable statistics" OFF)
 option(LOCK_MEMORY_TO_RAM "Lock storage buffers in RAM with mlock" OFF)
 option(TAILSCALE "Enable Tailscale-aware HTTP handling" OFF)
-option(ASSEMBLED_HTML "Response with cliet_assembled.html" ON)
 option(DEBOUNCER "Enable per-client request debouncing" ON)
 
 option(SIMD_X86 "Enable x86 SIMD code paths" ON)
@@ -31,7 +30,6 @@ set(_AD_NIHILUM_BUILD_OPTIONS
   STATISTICS
   LOCK_MEMORY_TO_RAM
   TAILSCALE
-  ASSEMBLED_HTML
   DEBOUNCER
   SIMD_X86
   SIMD_ARM
@@ -73,27 +71,7 @@ endif()
 
 configure_file(version.h.in version.h @ONLY)
 
-if(ASSEMBLED_HTML)
-  message(STATUS
-    "ASSEMBLED_HTML requires python3 for tools/assemble_html.py and "
-    "uglifyjs (from uglify-js) for tools/minify.sh"
-  )
-  find_program(PYTHON3_EXECUTABLE python3 REQUIRED)
-  set(CSP_HASHES_HEADER ${CMAKE_CURRENT_BINARY_DIR}/csp_hashes.h)
-
-  add_custom_target(client_assets ALL
-    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/tools/minify.sh
-    COMMAND ${PYTHON3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/assemble_html.py
-      ${CSP_HASHES_HEADER}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMENT "Minifying and assembling client assets"
-  )
-endif()
-
 add_executable(adnihilum server.c storage.c log.c)
-if(ASSEMBLED_HTML)
-  add_dependencies(adnihilum client_assets)
-endif()
 target_include_directories(adnihilum PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_compile_definitions(adnihilum PRIVATE
   $<$<BOOL:${JS_MINIFY}>:JS_MINIFY=1>
@@ -102,7 +80,6 @@ target_compile_definitions(adnihilum PRIVATE
   $<$<BOOL:${STATISTICS}>:STATISTICS=1>
   $<$<BOOL:${LOCK_MEMORY_TO_RAM}>:LOCK_MEMORY_TO_RAM=1>
   $<$<BOOL:${TAILSCALE}>:TAILSCALE=1>
-  $<$<BOOL:${ASSEMBLED_HTML}>:ASSEMBLED_HTML=1>
   $<$<BOOL:${DEBOUNCER}>:DEBOUNCER=1>
   $<$<BOOL:${SIMD_X86}>:SIMD_X86=1>
   $<$<BOOL:${SIMD_ARM}>:SIMD_ARM=1>

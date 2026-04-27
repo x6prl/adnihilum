@@ -15,11 +15,14 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 ASSETS_DIR = REPO_ROOT / "assets"
-SEND_HTML_IN = ASSETS_DIR / "client.html"
 RECEIVE_HTML_IN = ASSETS_DIR / "client-receive.html"
 CSS_FILE = ASSETS_DIR / "client.css"
-SEND_HTML_OUT = ASSETS_DIR / "client_assembled.html"
 RECEIVE_HTML_OUT = ASSETS_DIR / "client-receive_assembled.html"
+SEND_PAGES = (
+    (ASSETS_DIR / "client.html", ASSETS_DIR / "client_assembled.html"),
+    (ASSETS_DIR / "a.html", ASSETS_DIR / "a_assembled.html"),
+    (ASSETS_DIR / "b.html", ASSETS_DIR / "b_assembled.html"),
+)
 
 CSS_TAG = '<link rel="stylesheet" href="client.css">'
 QR_TAG = '<script src="qrcode.js"></script>'
@@ -112,15 +115,15 @@ def build_page(
     return html
 
 
-def write_csp_header(send_html: str, receive_html: str, output_path: Path) -> None:
+def write_csp_header(html_pages: tuple[str, ...], output_path: Path) -> None:
     script_hashes = sorted({
         hash_block_sha256(match.group(1))
-        for html in (send_html, receive_html)
+        for html in html_pages
         for match in SCRIPT_RE.finditer(html)
     })
     style_hashes = sorted({
         hash_block_sha256(match.group(1))
-        for html in (send_html, receive_html)
+        for html in html_pages
         for match in STYLE_RE.finditer(html)
     })
 
@@ -143,12 +146,16 @@ def write_csp_header(send_html: str, receive_html: str, output_path: Path) -> No
 
 
 def main() -> None:
-    send_html = build_page(
-        html_in=SEND_HTML_IN,
-        html_out=SEND_HTML_OUT,
-        include_qr=True,
-        page_script_tag=CLIENT_SEND_TAG,
-        page_script=read_text(prefer_min_js("client-send")),
+    send_script = read_text(prefer_min_js("client-send"))
+    send_htmls = tuple(
+        build_page(
+            html_in=html_in,
+            html_out=html_out,
+            include_qr=True,
+            page_script_tag=CLIENT_SEND_TAG,
+            page_script=send_script,
+        )
+        for html_in, html_out in SEND_PAGES
     )
     receive_html = build_page(
         html_in=RECEIVE_HTML_IN,
@@ -158,7 +165,7 @@ def main() -> None:
         page_script=read_text(prefer_min_js("client-receive")),
     )
     if len(sys.argv) == 2:
-        write_csp_header(send_html, receive_html, Path(sys.argv[1]))
+        write_csp_header(send_htmls + (receive_html,), Path(sys.argv[1]))
     elif len(sys.argv) != 1:
         sys.exit("usage: assemble_html.py [csp_header_out]")
 

@@ -54,9 +54,6 @@
 #if DEBUG
 #include "debug_stuff.h"
 #endif
-#if ASSEMBLED_HTML
-#include "csp_hashes.h"
-#endif
 #if DEBOUNCER
 #include "debouncer.h"
 #endif
@@ -181,14 +178,14 @@ typedef struct {
 	uint8_t *data;
 	size_t size;
 	const char content_type[_CONTENT_TYPE_STRING_MAX_SIZE];
+	char *replace_uptime_ptr;
+	char *replace_served_ptr;
+	char *replace_version_ptr;
 } asset_t;
 
 enum assets_id_t {
-#if ASSEMBLED_HTML
-	ASSET_CLIENT_ASSEMBLED_HTML = 0,
-	ASSET_CLIENT_RECEIVE_ASSEMBLED_HTML,
-#else
-	ASSET_CLIENT_HTML = 0,
+	ASSET_CLIENT_A_HTML = 0,
+	ASSET_CLIENT_B_HTML,
 	ASSET_CLIENT_RECEIVE_HTML,
 	ASSET_CLIENT_CSS,
 	ASSET_CLIENT_SHARED_JS,
@@ -196,18 +193,21 @@ enum assets_id_t {
 	ASSET_CLIENT_RECEIVE_JS,
 	ASSET_CLIENT_JS,
 	ASSET_QRCODE_JS,
-#endif
 	ASSET_ADNIHILUM128_PNG,
 	ASSETS_COUNT,
 };
 static uint8_t *assets_memory;
 
+enum asset_route_kind {
+	ASSET_ROUTE_NONE = 0,
+	ASSET_ROUTE_SEND_PAGE,
+	ASSET_ROUTE_RECEIVE_PAGE,
+	ASSET_ROUTE_STATIC,
+};
+
 static asset_t assets[ASSETS_COUNT] = {
-#if ASSEMBLED_HTML
-	[ASSET_CLIENT_ASSEMBLED_HTML] = { .content_type = _CONTENT_TYPE_HTML },
-	[ASSET_CLIENT_RECEIVE_ASSEMBLED_HTML] = { .content_type = _CONTENT_TYPE_HTML },
-#else
-	[ASSET_CLIENT_HTML] = { .content_type = _CONTENT_TYPE_HTML },
+	[ASSET_CLIENT_A_HTML] = { .content_type = _CONTENT_TYPE_HTML },
+	[ASSET_CLIENT_B_HTML] = { .content_type = _CONTENT_TYPE_HTML },
 	[ASSET_CLIENT_RECEIVE_HTML] = { .content_type = _CONTENT_TYPE_HTML },
 	[ASSET_CLIENT_CSS] = { .content_type = _CONTENT_TYPE_CSS },
 	[ASSET_CLIENT_SHARED_JS] = { .content_type = _CONTENT_TYPE_JS },
@@ -215,16 +215,12 @@ static asset_t assets[ASSETS_COUNT] = {
 	[ASSET_CLIENT_RECEIVE_JS] = { .content_type = _CONTENT_TYPE_JS },
 	[ASSET_CLIENT_JS] = { .content_type = _CONTENT_TYPE_JS },
 	[ASSET_QRCODE_JS] = { .content_type = _CONTENT_TYPE_JS },
-#endif
 	[ASSET_ADNIHILUM128_PNG] = { .content_type = _CONTENT_TYPE_PNG }
 };
 
 static const char *asset_file_paths[ASSETS_COUNT] = {
-#if ASSEMBLED_HTML
-	[ASSET_CLIENT_ASSEMBLED_HTML] = "assets/client_assembled.html",
-	[ASSET_CLIENT_RECEIVE_ASSEMBLED_HTML] = "assets/client-receive_assembled.html",
-#else
-	[ASSET_CLIENT_HTML] = "assets/client.html",
+	[ASSET_CLIENT_A_HTML] = "assets/a.html",
+	[ASSET_CLIENT_B_HTML] = "assets/b.html",
 	[ASSET_CLIENT_RECEIVE_HTML] = "assets/client-receive.html",
 	[ASSET_CLIENT_CSS] = "assets/client.css",
 #if JS_MINIFY
@@ -240,27 +236,67 @@ static const char *asset_file_paths[ASSETS_COUNT] = {
 	[ASSET_CLIENT_JS] = "assets/client.js",
 	[ASSET_QRCODE_JS] = "assets/qrcode.js",
 #endif
-#endif
 	[ASSET_ADNIHILUM128_PNG] = "assets/adnihilum128.png",
 };
 
-#define ASSET_PATH_STRING_MAX_SIZE 32
-static const char asset_paths[ASSETS_COUNT][ASSET_PATH_STRING_MAX_SIZE] = {
-#if ASSEMBLED_HTML
-	[ASSET_CLIENT_ASSEMBLED_HTML] = "/",
-	[ASSET_CLIENT_RECEIVE_ASSEMBLED_HTML] = "/receive",
-#else
-	[ASSET_CLIENT_HTML] = "/",
-	[ASSET_CLIENT_RECEIVE_HTML] = "/receive",
-	[ASSET_CLIENT_CSS] = "/client.css",
-	[ASSET_CLIENT_SHARED_JS] = "/client-shared.js",
-	[ASSET_CLIENT_SEND_JS] = "/client-send.js",
-	[ASSET_CLIENT_RECEIVE_JS] = "/client-receive.js",
-	[ASSET_CLIENT_JS] = "/client.js",
-	[ASSET_QRCODE_JS] = "/qrcode.js",
-#endif
-	[ASSET_ADNIHILUM128_PNG] = "/adnihilum128.png",
-};
+#define CLIENT_A_PREFIX "/a"
+#define CLIENT_B_PREFIX "/b"
+#define CLIENT_A_ROOT_PATH CLIENT_A_PREFIX "/"
+#define CLIENT_B_ROOT_PATH CLIENT_B_PREFIX "/"
+#define CLIENT_RECEIVE_PATH "/receive"
+#define CLIENT_A_RECEIVE_PATH CLIENT_A_PREFIX CLIENT_RECEIVE_PATH
+#define CLIENT_B_RECEIVE_PATH CLIENT_B_PREFIX CLIENT_RECEIVE_PATH
+#define CLIENT_STATUS_PATH "/status"
+#define CLIENT_A_STATUS_PATH CLIENT_A_PREFIX CLIENT_STATUS_PATH
+#define CLIENT_B_STATUS_PATH CLIENT_B_PREFIX CLIENT_STATUS_PATH
+#define CLIENT_BLOB_PATH_PREFIX "/blob/"
+#define CLIENT_A_BLOB_PATH_PREFIX CLIENT_A_PREFIX CLIENT_BLOB_PATH_PREFIX
+#define CLIENT_B_BLOB_PATH_PREFIX CLIENT_B_PREFIX CLIENT_BLOB_PATH_PREFIX
+
+static bool path_eq(const char *url, const char *path)
+{
+	return 0 == strcmp(url, path);
+}
+
+static uint8_t *find_16(const uint8_t *data, size_t size, const char ch);
+
+static bool asset_id_is_send_page(size_t asset_id)
+{
+	return asset_id == ASSET_CLIENT_A_HTML || asset_id == ASSET_CLIENT_B_HTML;
+}
+
+static bool path_eq_any3(const char *url, const char *path_a,
+			 const char *path_b, const char *path_c)
+{
+	return path_eq(url, path_a) || path_eq(url, path_b) ||
+	       path_eq(url, path_c);
+}
+
+static bool canonical_redirect_find(const char *url, const char **location)
+{
+	if (path_eq(url, CLIENT_A_PREFIX)) {
+		*location = CLIENT_A_ROOT_PATH;
+		return true;
+	}
+	if (path_eq(url, CLIENT_B_PREFIX)) {
+		*location = CLIENT_B_ROOT_PATH;
+		return true;
+	}
+	if (path_eq(url, CLIENT_RECEIVE_PATH "/")) {
+		*location = CLIENT_RECEIVE_PATH;
+		return true;
+	}
+	if (path_eq(url, CLIENT_A_RECEIVE_PATH "/")) {
+		*location = CLIENT_A_RECEIVE_PATH;
+		return true;
+	}
+	if (path_eq(url, CLIENT_B_RECEIVE_PATH "/")) {
+		*location = CLIENT_B_RECEIVE_PATH;
+		return true;
+	}
+	*location = NULL;
+	return false;
+}
 
 /*
  * In case of errors server will not start, thus we do not care of closing fds — OS will do it automatically
@@ -350,9 +386,26 @@ bool assets_load()
 		assets[i].size = asset_size;
 		current_ptr += asset_size;
 	}
-	LOG("%u static assets loaded for paths:", ASSETS_COUNT);
+	LOG("%u static assets loaded", ASSETS_COUNT);
 	for (size_t i = 0; i < ASSETS_COUNT; ++i) {
-		LOG("%s", asset_paths[i]);
+		if (asset_id_is_send_page(i)) {
+			assets[i].replace_uptime_ptr =
+				(char *)find_16(assets[i].data, assets[i].size,
+						REPLACE_UPTIME_CH);
+			assets[i].replace_served_ptr =
+				(char *)find_16(assets[i].data, assets[i].size,
+						REPLACE_SERVED_CH);
+			assets[i].replace_version_ptr =
+				(char *)find_16(assets[i].data, assets[i].size,
+						REPLACE_VERSION_CH);
+			if (!assets[i].replace_uptime_ptr ||
+			    !assets[i].replace_served_ptr ||
+			    !assets[i].replace_version_ptr) {
+				LOGE("Cannot find send-page replacement markers in %s",
+				     asset_file_paths[i]);
+				return false;
+			}
+		}
 		LOGD("%s\t%.1fKiB\n", asset_file_paths[i],
 		     (float)assets[i].size / 1024.f);
 	}
@@ -360,17 +413,85 @@ bool assets_load()
 	return true;
 }
 
-bool asset_find(const char *url, asset_t **asset)
+enum asset_route_kind asset_find(const char *url, asset_t **asset)
 {
-	for (size_t i = 0; i < ASSETS_COUNT; ++i) {
-		if (0 ==
-		    strncmp(url, asset_paths[i], ASSET_PATH_STRING_MAX_SIZE)) {
-			*asset = &assets[i];
-			return true;
-		}
-	}
 	*asset = NULL;
-	return false;
+	if (path_eq(url, CLIENT_A_ROOT_PATH)) {
+		*asset = &assets[ASSET_CLIENT_A_HTML];
+		return ASSET_ROUTE_SEND_PAGE;
+	}
+	if (path_eq(url, CLIENT_B_ROOT_PATH)) {
+		*asset = &assets[ASSET_CLIENT_B_HTML];
+		return ASSET_ROUTE_SEND_PAGE;
+	}
+	if (path_eq_any3(url, CLIENT_RECEIVE_PATH, CLIENT_A_RECEIVE_PATH,
+			 CLIENT_B_RECEIVE_PATH)) {
+		*asset = &assets[ASSET_CLIENT_RECEIVE_HTML];
+		return ASSET_ROUTE_RECEIVE_PAGE;
+	}
+	if (path_eq_any3(url, "/client.css", CLIENT_A_PREFIX "/client.css",
+			 CLIENT_B_PREFIX "/client.css")) {
+		*asset = &assets[ASSET_CLIENT_CSS];
+		return ASSET_ROUTE_STATIC;
+	}
+	if (path_eq_any3(url, "/client-shared.js",
+			 CLIENT_A_PREFIX "/client-shared.js",
+			 CLIENT_B_PREFIX "/client-shared.js")) {
+		*asset = &assets[ASSET_CLIENT_SHARED_JS];
+		return ASSET_ROUTE_STATIC;
+	}
+	if (path_eq_any3(url, "/client-send.js",
+			 CLIENT_A_PREFIX "/client-send.js",
+			 CLIENT_B_PREFIX "/client-send.js")) {
+		*asset = &assets[ASSET_CLIENT_SEND_JS];
+		return ASSET_ROUTE_STATIC;
+	}
+	if (path_eq_any3(url, "/client-receive.js",
+			 CLIENT_A_PREFIX "/client-receive.js",
+			 CLIENT_B_PREFIX "/client-receive.js")) {
+		*asset = &assets[ASSET_CLIENT_RECEIVE_JS];
+		return ASSET_ROUTE_STATIC;
+	}
+	if (path_eq_any3(url, "/client.js", CLIENT_A_PREFIX "/client.js",
+			 CLIENT_B_PREFIX "/client.js")) {
+		*asset = &assets[ASSET_CLIENT_JS];
+		return ASSET_ROUTE_STATIC;
+	}
+	if (path_eq_any3(url, "/qrcode.js", CLIENT_A_PREFIX "/qrcode.js",
+			 CLIENT_B_PREFIX "/qrcode.js")) {
+		*asset = &assets[ASSET_QRCODE_JS];
+		return ASSET_ROUTE_STATIC;
+	}
+	if (path_eq_any3(url, "/adnihilum128.png",
+			 CLIENT_A_PREFIX "/adnihilum128.png",
+			 CLIENT_B_PREFIX "/adnihilum128.png")) {
+		*asset = &assets[ASSET_ADNIHILUM128_PNG];
+		return ASSET_ROUTE_STATIC;
+	}
+	return ASSET_ROUTE_NONE;
+}
+
+static bool is_status_path(const char *url)
+{
+	return path_eq_any3(url, CLIENT_STATUS_PATH, CLIENT_A_STATUS_PATH,
+			    CLIENT_B_STATUS_PATH);
+}
+
+static const char *blob_id_path(const char *url)
+{
+	if (0 == strncmp(url, CLIENT_BLOB_PATH_PREFIX,
+			 strlen(CLIENT_BLOB_PATH_PREFIX))) {
+		return url + strlen(CLIENT_BLOB_PATH_PREFIX);
+	}
+	if (0 == strncmp(url, CLIENT_A_BLOB_PATH_PREFIX,
+			 strlen(CLIENT_A_BLOB_PATH_PREFIX))) {
+		return url + strlen(CLIENT_A_BLOB_PATH_PREFIX);
+	}
+	if (0 == strncmp(url, CLIENT_B_BLOB_PATH_PREFIX,
+			 strlen(CLIENT_B_BLOB_PATH_PREFIX))) {
+		return url + strlen(CLIENT_B_BLOB_PATH_PREFIX);
+	}
+	return NULL;
 }
 
 static uint8_t *tls_key_and_cert_memory;
@@ -471,8 +592,6 @@ static bool all16_eq_byte(const uint8_t *data, size_t remaining, uint8_t ch)
 	return all16_eq_byte_scalar(data, remaining, ch);
 }
 
-static char *html_uptime_ptr, *html_served_ptr, *html_version_ptr;
-
 static uint8_t *find_16_scalar(const uint8_t *data, size_t size, uint8_t ch)
 {
 	if (size < REPLACE_SIZE)
@@ -528,6 +647,29 @@ static uint8_t *find_16(const uint8_t *data, size_t size, const char ch)
 #else
 	return find_16_scalar(data, size, (uint8_t)ch);
 #endif
+}
+
+static bool asset_replace_send_page_markers(asset_t *asset)
+{
+	if (!asset->replace_uptime_ptr || !asset->replace_served_ptr ||
+	    !asset->replace_version_ptr) {
+		LOGE("HTML asset replacement markers were not initialized.");
+		return false;
+	}
+
+	// NOTE: be careful
+	snprintf(asset->replace_uptime_ptr, REPLACE_SIZE, "%-14.1fH",
+		 app_uptime_hours());
+	asset->replace_uptime_ptr[REPLACE_SIZE - 1] = ' ';
+	// NOTE: be careful
+	snprintf(asset->replace_served_ptr, REPLACE_SIZE, "%-15u",
+		 statistics.total_served);
+	asset->replace_served_ptr[REPLACE_SIZE - 1] = ' ';
+	// NOTE: be careful
+	snprintf(asset->replace_version_ptr, REPLACE_SIZE, "%-15.15s",
+		 AD_NIHILUM_VERSION);
+	asset->replace_version_ptr[REPLACE_SIZE - 1] = ' ';
+	return true;
 }
 
 #pragma GCC diagnostic push
@@ -599,19 +741,6 @@ static enum MHD_Result send_response(struct MHD_Connection *c, unsigned code,
 	case HP_HTML_VIEWER:
 		MHD_add_response_header(resp, "Referrer-Policy", "no-referrer");
 		MHD_add_response_header(resp, "X-Frame-Options", "DENY");
-#if ASSEMBLED_HTML
-		MHD_add_response_header(
-			resp, "Content-Security-Policy",
-			"default-src 'self'; "
-			"script-src 'self' " ADN_CSP_SCRIPT_HASHES "; "
-			"style-src 'self' " ADN_CSP_STYLE_HASHES "; "
-			"img-src 'self' data:; "
-			"connect-src 'self'; "
-			"object-src 'none'; "
-			"base-uri 'none'; "
-			"frame-ancestors 'none'; "
-			"form-action 'self'");
-#else
 		MHD_add_response_header(
 			resp, "Content-Security-Policy",
 			"default-src 'self'; "
@@ -623,7 +752,6 @@ static enum MHD_Result send_response(struct MHD_Connection *c, unsigned code,
 			"base-uri 'none'; "
 			"frame-ancestors 'none'; "
 			"form-action 'self'");
-#endif
 		MHD_add_response_header(resp, "Cross-Origin-Opener-Policy",
 					"same-origin");
 		MHD_add_response_header(resp, "Cross-Origin-Resource-Policy",
@@ -659,6 +787,25 @@ static enum MHD_Result send_text(struct MHD_Connection *c, unsigned code,
 {
 	return send_response(c, code, s, strlen(s), "text/plain; charset=utf-8",
 			     MHD_RESPMEM_MUST_COPY, HP_OTHER);
+}
+
+static enum MHD_Result send_redirect(struct MHD_Connection *c,
+				     const char *location)
+{
+	struct MHD_Response *resp =
+		MHD_create_response_from_buffer(0, NULL, MHD_RESPMEM_PERSISTENT);
+	if (!resp)
+		return MHD_NO;
+	MHD_add_response_header(resp, "Location", location);
+	MHD_add_response_header(resp, "Cache-Control", "no-store");
+	MHD_add_response_header(resp, "Referrer-Policy", "no-referrer");
+	MHD_add_response_header(resp, "X-Content-Type-Options", "nosniff");
+	MHD_add_response_header(resp, "Strict-Transport-Security",
+				"max-age=31536000");
+	enum MHD_Result res =
+		MHD_queue_response(c, MHD_HTTP_MOVED_PERMANENTLY, resp);
+	MHD_destroy_response(resp);
+	return res;
 }
 
 typedef struct req_ctx_t {
@@ -763,11 +910,15 @@ static enum MHD_Result ahc(void *cls, struct MHD_Connection *conn,
 
 	bool is_get = (0 == memcmp(method, "GET", 4));
 	asset_t *asset = NULL;
+	enum asset_route_kind asset_route = ASSET_ROUTE_NONE;
 	bool is_get_path_static = false;
-	bool is_get_path_root = false;
+	bool is_get_path_send = false;
+	const char *redirect_location = NULL;
 	if (is_get) {
-		is_get_path_root = 0 == memcmp(url, "/", 2);
-		is_get_path_static = asset_find(url, &asset);
+		asset_route = asset_find(url, &asset);
+		is_get_path_static = asset_route != ASSET_ROUTE_NONE;
+		is_get_path_send = asset_route == ASSET_ROUTE_SEND_PAGE;
+		canonical_redirect_find(url, &redirect_location);
 	}
 
 #if STATISTICS
@@ -782,7 +933,7 @@ static enum MHD_Result ahc(void *cls, struct MHD_Connection *conn,
 	// Per-IP debounce
 	if (!ctx->rate_checked) {
 		ctx->rate_checked = true;
-		bool should_limit = !is_get_path_static;
+		bool should_limit = !is_get_path_static && !redirect_location;
 		if (should_limit && !debouncer_allow_addr(peer)) {
 			LOGD("Request debounced (429 Too Many Requests).\n");
 #if STATISTICS
@@ -797,31 +948,29 @@ static enum MHD_Result ahc(void *cls, struct MHD_Connection *conn,
 	if (new_ctx)
 		AHC_RETURN(MHD_YES);
 
-	bool is_path_blob = 0 == strncmp(url, "/blob/", 6);
+	const char *blob_id_hex = blob_id_path(url);
 
-	if (!is_path_blob) {
+	if (!blob_id_hex) {
 		LOGD("%s requested…\n", url);
+		if (redirect_location) {
+			AHC_RETURN(send_redirect(conn, redirect_location));
+		}
 		if (is_get_path_static) {
-			if (is_get_path_root) {
-				// NOTE: be careful
-				snprintf(html_uptime_ptr, REPLACE_SIZE,
-					 "%-14.1fH", app_uptime_hours());
-				html_uptime_ptr[REPLACE_SIZE - 1] = ' ';
-				// NOTE: be careful
-				snprintf(html_served_ptr, REPLACE_SIZE, "%-15u",
-					 statistics.total_served);
-				html_served_ptr[REPLACE_SIZE - 1] = ' ';
-				// NOTE: be careful
-				snprintf(html_version_ptr, REPLACE_SIZE,
-					 "%-15.15s", AD_NIHILUM_VERSION);
-				html_version_ptr[REPLACE_SIZE - 1] = ' ';
+			if (is_get_path_send) {
+				if (!asset_replace_send_page_markers(asset)) {
+					AHC_RETURN(send_text(
+						conn,
+						MHD_HTTP_INTERNAL_SERVER_ERROR,
+						"Static asset error"));
+				}
 			}
 			AHC_RETURN(send_response(
 				conn, MHD_HTTP_OK, asset->data, asset->size,
 				asset->content_type, MHD_RESPMEM_PERSISTENT,
-				is_get_path_root ? HP_HTML_VIEWER :
-						   HP_STATIC_ASSET));
-		} else if (0 == strncmp(url, "/status", 8)) {
+				asset_route == ASSET_ROUTE_STATIC ?
+					HP_STATIC_ASSET :
+					HP_HTML_VIEWER));
+		} else if (is_status_path(url)) {
 			storage_status_t stats = storage_status();
 			size_t blobs_in_use = 0;
 			for (size_t j = 0;
@@ -862,10 +1011,10 @@ static enum MHD_Result ahc(void *cls, struct MHD_Connection *conn,
 				"application/json; charset=utf-8",
 				MHD_RESPMEM_MUST_COPY, HP_OTHER));
 		}
-	} else if (ID_LENGTH == strnlen(url + 6, 1 + ID_LENGTH)) {
+	} else if (ID_LENGTH == strnlen(blob_id_hex, 1 + ID_LENGTH)) {
 		// path is '/blob/*'
 		htable_key_t id;
-		if (!id_hex_to_bytes(url + 6, id.bytes)) {
+		if (!id_hex_to_bytes(blob_id_hex, id.bytes)) {
 			LOGD("%s Bad id!\n", url);
 			AHC_RETURN(send_text(conn, MHD_HTTP_BAD_REQUEST,
 					     "Bad id"));
@@ -1140,25 +1289,6 @@ int main(int argc, char **argv)
 
 	if (!assets_load()) {
 		LOGE("Failed to load assets.");
-		goto cleanup;
-	}
-
-	html_uptime_ptr = (char *)find_16(assets[0].data, assets[0].size,
-					  REPLACE_UPTIME_CH);
-	if (!html_uptime_ptr) {
-		LOGE("Cannot find the point of uptime setting in HTML.");
-		goto cleanup;
-	}
-	html_served_ptr = (char *)find_16(assets[0].data, assets[0].size,
-					  REPLACE_SERVED_CH);
-	if (!html_served_ptr) {
-		LOGE("Cannot find the point of served setting in HTML.");
-		goto cleanup;
-	}
-	html_version_ptr = (char *)find_16(assets[0].data, assets[0].size,
-					   REPLACE_VERSION_CH);
-	if (!html_version_ptr) {
-		LOGE("Cannot find the point of version setting in HTML.");
 		goto cleanup;
 	}
 
