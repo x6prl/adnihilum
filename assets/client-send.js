@@ -96,6 +96,69 @@
 			});
 	}
 
+	function shouldAutoScrollComposer() {
+		if (typeof window === 'undefined' ||
+			typeof window.matchMedia !== 'function') {
+			return false;
+		}
+		return window.matchMedia('(max-width: 900px)').matches ||
+			window.matchMedia('(pointer: coarse)').matches;
+	}
+
+	function scrollComposerToTop(target) {
+		const SCROLL_DELAY = 30;
+		if (!target || !shouldAutoScrollComposer())
+			return;
+
+		const composerPanel = target.closest('.composer-panel');
+		const scrollTarget = composerPanel || target;
+		const doScroll = () => {
+			scrollTarget.scrollIntoView({
+				block: 'start',
+				inline: 'nearest',
+				behavior: 'smooth',
+			});
+		};
+
+		doScroll();
+		if (typeof window.requestAnimationFrame === 'function')
+			window.requestAnimationFrame(doScroll);
+		setTimeout(doScroll, SCROLL_DELAY);
+	}
+
+	function bindComposerFieldAutoScroll(field) {
+		const FIELD_SELECTED_SCROLL_DELAY = 40;
+		let viewprotTimer = null;
+		const triggerScroll = () => {
+			scrollComposerToTop(field);
+		}
+		const handleViewportChange = () => {
+			if (viewprotTimer != null)
+				clearTimeout(viewprotTimer);
+			viewprotTimer = setTimeout(() => {
+				viewprotTimer = null;
+				if (document.activeElement === field)
+					triggerScroll();
+			}, FIELD_SELECTED_SCROLL_DELAY);
+		}
+
+		field.addEventListener('focus', triggerScroll);
+		field.addEventListener('click', triggerScroll);
+
+		if (window.visualViewport && typeof window.visualViewport.addEventListener === 'function') {
+			field.addEventListener('focus', () => {
+				window.visualViewport.addEventListener('resize', handleViewportChange);
+			});
+			field.addEventListener('blur', () => {
+				window.visualViewport.removeEventListener('resize', handleViewportChange);
+				if (viewprotTimer != null) {
+					clearTimeout(viewprotTimer);
+					viewprotTimer = null;
+				}
+			})
+		}
+	}
+
 	async function sendSecret() {
 		shared.clearPendingSecret();
 		shared.lockTextarea(true);
@@ -292,6 +355,8 @@
 
 		textArea.addEventListener('input', clearGeneratedState);
 		optionalPasswordField.addEventListener('input', clearGeneratedState);
+		bindComposerFieldAutoScroll(textArea);
+		bindComposerFieldAutoScroll(optionalPasswordField);
 
 		resetPrimaryButton();
 	}
