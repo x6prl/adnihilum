@@ -25,8 +25,11 @@
 
 	function initResponsivePlaceholders() {
 		const text = document.getElementById('text');
-		if (!text || typeof window.matchMedia !== 'function')
+		if (!text || typeof window.matchMedia !== 'function' ||
+			!text.dataset.placeholderDesktop ||
+			!text.dataset.placeholderMobile) {
 			return;
+		}
 
 		const mobileMedia = window.matchMedia('(max-width: 680px)');
 		const updatePlaceholders = function () {
