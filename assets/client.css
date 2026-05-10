@@ -124,7 +124,7 @@ summary,
 .layout-single {
     display: grid;
     align-items: start;
-    gap: 42px;
+    gap: 28px;
 }
 
 .panel {
@@ -168,6 +168,27 @@ summary,
     color: var(--ink-soft);
     font-size: 1rem;
     line-height: 1.65;
+}
+
+.how-to-use {
+    display: grid;
+    gap: 12px;
+    max-width: 760px;
+}
+
+.how-to-use ol {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding-left: 1.35rem;
+    color: var(--ink-soft);
+    line-height: 1.55;
+}
+
+.how-to-use p {
+    margin: 0;
+    color: var(--ink-soft);
+    line-height: 1.55;
 }
 
 .footer-version span {
@@ -403,7 +424,7 @@ textarea.receive-state-error {
 
 .info-section {
     display: grid;
-    gap: 24px;
+    gap: 20px;
     content-visibility: auto;
     contain-intrinsic-size: 900px;
 }
@@ -413,17 +434,17 @@ textarea.receive-state-error {
 }
 
 .info-hero h2 {
-    margin: 0 0 16px;
-    font-size: clamp(2rem, 4vw, 3.8rem);
-    line-height: 1.02;
-    letter-spacing: -0.04em;
+    margin: 0 0 10px;
+    font-size: clamp(1.35rem, 2vw, 2rem);
+    line-height: 1.18;
+    letter-spacing: -0.02em;
 }
 
 .info-hero p {
     margin: 0;
     color: var(--ink-soft);
-    font-size: 1.04rem;
-    line-height: 1.7;
+    font-size: 0.98rem;
+    line-height: 1.55;
 }
 
 .feature-grid,
@@ -535,9 +556,9 @@ textarea.receive-state-error {
 
 .info-panel-stat strong {
     position: relative;
-    font-size: clamp(2rem, 4vw, 3rem);
-    line-height: 1;
-    letter-spacing: -0.05em;
+    font-size: clamp(1.3rem, 2vw, 1.8rem);
+    line-height: 1.08;
+    letter-spacing: -0.02em;
 }
 
 .step-card {
@@ -823,8 +844,9 @@ textarea.receive-state-error {
         max-width: 32ch;
     }
 
+    .how-to-use h1,
     .info-hero h2 {
-        font-size: 1.8rem;
+        font-size: 1.35rem;
     }
 
     .info-hero p {
