@@ -236,11 +236,30 @@ textarea {
     line-height: 1.45;
 }
 
+.message-output {
+    display: block;
+    width: 100%;
+    min-height: 4.5rem;
+    padding: 22px 24px 22px 28px;
+    border-left: 4px solid var(--accent);
+    border-radius: 0 18px 18px 0;
+    background: #0b1524;
+    color: var(--ink);
+    font: 0.98rem/1.5 "Trebuchet MS", "Segoe UI", sans-serif;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
 input:focus,
 textarea:focus {
     outline: none;
     border-color: var(--accent);
     background: #010611;
+}
+
+.message-output:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
 }
 
 textarea[readonly] {
@@ -259,12 +278,15 @@ textarea.receive-state-error {
     line-height: 1.5;
 }
 
-textarea.receive-state-info {
+.receive-state-info {
     color: var(--ink-soft);
 }
 
-textarea.receive-state-error {
+.receive-state-error {
     color: var(--danger);
+}
+
+textarea.receive-state-error {
     background: #300c14;
     border-color: #7d2d3c;
 }

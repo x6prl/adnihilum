@@ -28,7 +28,7 @@
 		textField.classList.remove('receive-state-info', 'receive-state-error');
 		if (tone === 'info' || tone === 'error')
 			textField.classList.add('receive-state-' + tone);
-		textField.value = message;
+		textField.textContent = message;
 		textField.dispatchEvent(new Event('input', { bubbles: true }));
 		syncCopyButtonState();
 	}
@@ -53,7 +53,7 @@
 		const copyBtn = shared.$('copySecretBtn');
 		if (!textField || !copyBtn)
 			return;
-		copyBtn.disabled = !textField.value;
+		copyBtn.disabled = !textField.textContent;
 	}
 
 	async function tryToReceiveSecret() {
@@ -270,13 +270,13 @@
 			copyBtn.addEventListener('click', () => {
 				void (async function () {
 					const currentText = shared.$('text');
-					if (!currentText || !currentText.value ||
+					if (!currentText || !currentText.textContent ||
 						currentText.classList.contains('receive-state-error') ||
 						currentText.classList.contains('receive-state-info')) {
 						return;
 					}
 					try {
-						await navigator.clipboard.writeText(currentText.value);
+						await navigator.clipboard.writeText(currentText.textContent);
 						copyBtn.textContent = 'Copied';
 						setTimeout(() => {
 							copyBtn.textContent = defaultCopyLabel;

@@ -146,6 +146,10 @@
 				if (!field || typeof field.value !== 'string' ||
 					!field.value)
 					return;
+				if (field.classList.contains('receive-state-info') ||
+					field.classList.contains('receive-state-error')) {
+					return;
+				}
 				field.value = '';
 				field.dispatchEvent(
 					new Event('input', { bubbles: true }));
