@@ -318,8 +318,7 @@
 		const optionalPasswordField = shared.$('optionalPassword');
 		const textArea = shared.$('text');
 
-		if (!btnGetLink || !btnCopyLink || !btnCopyQrImage ||
-			!optionalPasswordField || !textArea) {
+		if (!btnGetLink || !btnCopyLink || !optionalPasswordField || !textArea) {
 			return;
 		}
 
@@ -331,9 +330,10 @@
 
 		btnGetLink.addEventListener('click', () => { void sendSecret(); });
 		btnCopyLink.addEventListener('click', shared.copyLink);
-		btnCopyQrImage.addEventListener('click', () => {
-			void shared.copyQrImage();
-		});
+		if (btnCopyQrImage)
+			btnCopyQrImage.addEventListener('click', () => {
+				void shared.copyQrImage();
+			});
 
 		textArea.addEventListener('keydown', (event) => {
 			const modifierPressed = shared.isMacLike ? event.metaKey : event.ctrlKey;

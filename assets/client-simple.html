@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <title>Ad Nihilum</title>
+    <link rel="icon" type="image/png" href="adnihilum128.png">
+    <link rel="stylesheet" href="client-simple.css">
+</head>
+<body>
+    <main class="app">
+        <header class="topbar">
+            <a class="brand" href="/">
+                <img src="adnihilum128.png" width="36" height="36" alt="">
+                <span>Ad Nihilum</span>
+            </a>
+            <a class="topbar-link" href="https://github.com/x6prl/adnihilum/#what-ad-nihilum-does-not-protect-against">Be careful</a>
+        </header>
+
+        <section class="composer">
+            <textarea id="text" tabindex="1" autofocus autocomplete="off" data-limit-indicator="true" data-placeholder-desktop="Paste the message, token, or credentials here.&#10;Press Ctrl+Enter to create and copy the link." data-placeholder-mobile="Paste the message, token, or credentials here." placeholder="Paste the message, token, or credentials here.&#10;Press Ctrl+Enter to create and copy the link."></textarea>
+
+            <input id="optionalPassword" tabindex="2" type="password" autocomplete="new-password" spellcheck="false" placeholder="Password">
+
+            <div class="share-row">
+                <div class="actions">
+                    <button class="primary-btn" id="btnGetLink" tabindex="3" type="button" data-default-label="Create and copy link">
+                        <span id="btnGetLinkLabel">Create and copy link</span>
+                    </button>
+                    <button class="secondary-btn" id="btnCopyLink" type="button" hidden>Copy link</button>
+                </div>
+
+                <div class="generated-output" id="generatedWrap" hidden>
+                    <input id="generatedUrl" type="text" readonly autocomplete="off" spellcheck="false">
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <dialog class="app-popup" id="appPopup" aria-labelledby="appPopupTitle">
+        <form class="app-popup-card" method="dialog">
+            <h2 id="appPopupTitle">Something went wrong</h2>
+            <p id="appPopupBody"></p>
+            <button class="primary-btn" type="submit">OK</button>
+        </form>
+    </dialog>
+
+    <script src="client-shared.js"></script>
+    <script src="client-send.js"></script>
+    <script src="client.js"></script>
+</body>
+</html>

@@ -189,8 +189,10 @@ enum assets_id_t {
 	ASSET_CLIENT_RECEIVE_ASSEMBLED_HTML,
 #else
 	ASSET_CLIENT_HTML = 0,
+	ASSET_CLIENT_SIMPLE_HTML,
 	ASSET_CLIENT_RECEIVE_HTML,
 	ASSET_CLIENT_CSS,
+	ASSET_CLIENT_SIMPLE_CSS,
 	ASSET_CLIENT_SHARED_JS,
 	ASSET_CLIENT_SEND_JS,
 	ASSET_CLIENT_RECEIVE_JS,
@@ -208,8 +210,10 @@ static asset_t assets[ASSETS_COUNT] = {
 	[ASSET_CLIENT_RECEIVE_ASSEMBLED_HTML] = { .content_type = _CONTENT_TYPE_HTML },
 #else
 	[ASSET_CLIENT_HTML] = { .content_type = _CONTENT_TYPE_HTML },
+	[ASSET_CLIENT_SIMPLE_HTML] = { .content_type = _CONTENT_TYPE_HTML },
 	[ASSET_CLIENT_RECEIVE_HTML] = { .content_type = _CONTENT_TYPE_HTML },
 	[ASSET_CLIENT_CSS] = { .content_type = _CONTENT_TYPE_CSS },
+	[ASSET_CLIENT_SIMPLE_CSS] = { .content_type = _CONTENT_TYPE_CSS },
 	[ASSET_CLIENT_SHARED_JS] = { .content_type = _CONTENT_TYPE_JS },
 	[ASSET_CLIENT_SEND_JS] = { .content_type = _CONTENT_TYPE_JS },
 	[ASSET_CLIENT_RECEIVE_JS] = { .content_type = _CONTENT_TYPE_JS },
@@ -225,8 +229,10 @@ static const char *asset_file_paths[ASSETS_COUNT] = {
 	[ASSET_CLIENT_RECEIVE_ASSEMBLED_HTML] = "assets/client-receive_assembled.html",
 #else
 	[ASSET_CLIENT_HTML] = "assets/client.html",
+	[ASSET_CLIENT_SIMPLE_HTML] = "assets/client-simple.html",
 	[ASSET_CLIENT_RECEIVE_HTML] = "assets/client-receive.html",
 	[ASSET_CLIENT_CSS] = "assets/client.css",
+	[ASSET_CLIENT_SIMPLE_CSS] = "assets/client-simple.css",
 #if JS_MINIFY
 	[ASSET_CLIENT_SHARED_JS] = "assets/client-shared.min.js",
 	[ASSET_CLIENT_SEND_JS] = "assets/client-send.min.js",
@@ -251,8 +257,10 @@ static const char asset_paths[ASSETS_COUNT][ASSET_PATH_STRING_MAX_SIZE] = {
 	[ASSET_CLIENT_RECEIVE_ASSEMBLED_HTML] = "/receive",
 #else
 	[ASSET_CLIENT_HTML] = "/",
+	[ASSET_CLIENT_SIMPLE_HTML] = "/simple",
 	[ASSET_CLIENT_RECEIVE_HTML] = "/receive",
 	[ASSET_CLIENT_CSS] = "/client.css",
+	[ASSET_CLIENT_SIMPLE_CSS] = "/client-simple.css",
 	[ASSET_CLIENT_SHARED_JS] = "/client-shared.js",
 	[ASSET_CLIENT_SEND_JS] = "/client-send.js",
 	[ASSET_CLIENT_RECEIVE_JS] = "/client-receive.js",
