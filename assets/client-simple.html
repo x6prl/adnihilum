@@ -17,6 +17,9 @@
             </a>
             <a class="topbar-link" href="https://github.com/x6prl/adnihilum/#what-ad-nihilum-does-not-protect-against">Be careful</a>
         </header>
+        <noscript>
+            JavaScript with WebCrypto and Fetch is required to create or open secrets.
+        </noscript>
 
         <section class="composer">
             <textarea id="text" tabindex="1" autofocus autocomplete="off" data-limit-indicator="true" data-placeholder-desktop="Paste the message, token, or credentials here.&#10;Press Ctrl+Enter to create and copy the link." data-placeholder-mobile="Paste the message, token, or credentials here." placeholder="Paste the message, token, or credentials here.&#10;Press Ctrl+Enter to create and copy the link."></textarea>
@@ -40,8 +43,8 @@
 
     <dialog class="app-popup" id="appPopup" aria-labelledby="appPopupTitle">
         <form class="app-popup-card" method="dialog">
-            <h2 id="appPopupTitle">Something went wrong</h2>
-            <p id="appPopupBody"></p>
+            <h2 id="appPopupTitle">JavaScript required</h2>
+            <p id="appPopupBody">This page requires JavaScript with WebCrypto and Fetch to create or open secrets.</p>
             <button class="primary-btn" type="submit">OK</button>
         </form>
     </dialog>

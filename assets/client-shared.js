@@ -100,7 +100,7 @@
 		if (!popup || !titleEl || !bodyEl)
 			return;
 
-		titleEl.textContent = title || 'Something went wrong';
+		titleEl.textContent = title || 'Action needed';
 		bodyEl.textContent = message || '';
 		if (typeof popup.showModal === 'function') {
 			if (!popup.open)
