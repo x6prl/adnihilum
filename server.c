@@ -97,6 +97,8 @@ static struct {
 	uint64_t connections_total;
 	uint64_t connections_unknown;
 	uint64_t connections_debounced;
+	uint64_t page_root_total;
+	uint64_t page_simple_total;
 #endif
 } statistics;
 
@@ -777,8 +779,14 @@ static enum MHD_Result ahc(void *cls, struct MHD_Connection *conn,
 	asset_t *asset = NULL;
 	bool is_get_path_static = false;
 	bool is_get_path_root = false;
+#if STATISTICS
+	bool is_get_path_simple = false;
+#endif
 	if (is_get) {
 		is_get_path_root = 0 == memcmp(url, "/", 2);
+#if STATISTICS
+		is_get_path_simple = 0 == memcmp(url, "/simple", 8);
+#endif
 		is_get_path_static = asset_find(url, &asset);
 	}
 
@@ -814,6 +822,13 @@ static enum MHD_Result ahc(void *cls, struct MHD_Connection *conn,
 	if (!is_path_blob) {
 		LOGD("%s requested…\n", url);
 		if (is_get_path_static) {
+#if STATISTICS
+			if (is_get_path_root) {
+				statistics.page_root_total += 1;
+			} else if (is_get_path_simple) {
+				statistics.page_simple_total += 1;
+			}
+#endif
 			if (is_get_path_root) {
 				// NOTE: be careful
 				snprintf(html_uptime_ptr, REPLACE_SIZE,
@@ -842,18 +857,21 @@ static enum MHD_Result ahc(void *cls, struct MHD_Connection *conn,
 				blobs_in_use += stats.in_use[j];
 			}
 
-			char payload[256];
+			char payload[384];
 #if STATISTICS
 			int written = snprintf(
 				payload, sizeof(payload),
 				"{\"uptime_hours\":%.1f,\"total_served\":%u,"
 				"\"blobs_in_use\":%zu,\"connections\":{"
 				"\"total\":%zu,\"unknown\":%zu,"
-				"\"debounced\":%zu}}",
+				"\"debounced\":%zu},\"pages\":{"
+				"\"/\":%llu,\"/simple\":%llu}}",
 				app_uptime_hours(), statistics.total_served,
 				blobs_in_use, statistics.connections_total,
 				statistics.connections_unknown,
-				statistics.connections_debounced);
+				statistics.connections_debounced,
+				(unsigned long long)statistics.page_root_total,
+				(unsigned long long)statistics.page_simple_total);
 #else
 			int written = snprintf(payload, sizeof(payload),
 					       "{\"uptime_hours\":%.1f,"
@@ -1326,6 +1344,9 @@ cleanup:
 	    statistics.req_ctx_alive_current);
 	LOG("connection statistics: total=%zu, unknown=%zu",
 	    statistics.connections_total, statistics.connections_unknown);
+	LOG("page statistics: /=%llu, /simple=%llu",
+	    (unsigned long long)statistics.page_root_total,
+	    (unsigned long long)statistics.page_simple_total);
 #if DEBOUNCER
 	LOG("debouncer statistics: total debounced=%zu, capacity=%u, window_ms=%u",
 	    statistics.connections_debounced, DEB_CAP, DEB_WINDOW_MS);
