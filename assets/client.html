@@ -36,41 +36,39 @@
             </section>
 
             <section class="panel panel-primary composer-panel">
-                <div class="stack">
-                    <div class="field-group field-group-main">
-                        <label for="text">Write your message in this field</label>
-                        <textarea id="text" rows="8" tabindex="1" autofocus autocomplete="off" data-limit-indicator="true" data-placeholder-desktop="Paste the message, token, or credentials here.&#10;Press Ctrl+Enter to create and copy the link." data-placeholder-mobile="Paste the message, token, or credentials here." placeholder="Paste the message, token, or credentials here.&#10;Press Ctrl+Enter to create and copy the link."></textarea>
-                    </div>
+                <div class="field-group field-group-main">
+                    <label for="text">Write your message in this field</label>
+                    <textarea id="text" rows="8" tabindex="1" autofocus autocomplete="off" data-limit-indicator="true" data-placeholder-desktop="Paste the message, token, or credentials here.&#10;Press Ctrl+Enter to create and copy the link." data-placeholder-mobile="Paste the message, token, or credentials here." placeholder="Paste the message, token, or credentials here.&#10;Press Ctrl+Enter to create and copy the link."></textarea>
+                </div>
 
-                    <div class="field-grid">
-                        <div class="field-group">
-                            <label for="optionalPassword">Password (optional)</label>
-                            <input id="optionalPassword" tabindex="2" type="password" autocomplete="new-password" spellcheck="false" placeholder="Send not with the link, though.">
-                            <p class="field-note">The password is <b>never</b> sent to the server.</p>
-                        </div>
+                <div class="field-grid">
+                    <div class="field-group">
+                        <label for="optionalPassword">Password (optional)</label>
+                        <input id="optionalPassword" tabindex="2" type="password" autocomplete="new-password" spellcheck="false" placeholder="Send not with the link, though.">
+                        <p class="field-note">The password is <b>never</b> sent to the server.</p>
                     </div>
+                </div>
 
-                    <div class="action-row">
-                        <button class="primary-btn" id="btnGetLink" tabindex="3" type="button">
-                            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                            </svg>
-                            <span id="btnGetLinkLabel">Create and copy link</span>
-                        </button>
-                        <button class="secondary-btn" id="btnCopyLink" type="button" hidden>Copy link</button>
-                        <button class="secondary-btn" id="btnCopyQrImage" type="button" hidden>Copy QR image</button>
-                    </div>
+                <div class="action-row">
+                    <button class="primary-btn" id="btnGetLink" tabindex="3" type="button">
+                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        </svg>
+                        <span id="btnGetLinkLabel">Create and copy link</span>
+                    </button>
+                    <button class="secondary-btn" id="btnCopyLink" type="button" hidden>Copy link</button>
+                    <button class="secondary-btn" id="btnCopyQrImage" type="button" hidden>Copy QR image</button>
+                </div>
 
-                    <div class="generated-output" id="generatedWrap" hidden>
-                        <label for="generatedUrl">Share Link</label>
-                        <input id="generatedUrl" type="text" readonly autocomplete="off" spellcheck="false">
-                    </div>
+                <div class="generated-output" id="generatedWrap" hidden>
+                    <label for="generatedUrl">Share Link</label>
+                    <input id="generatedUrl" type="text" readonly autocomplete="off" spellcheck="false">
+                </div>
 
-                    <div class="qr-output" id="qrWrap" hidden>
-                        <div class="qr-card">
-                            <div id="qrCode"></div>
-                            <p class="field-note">Use the QR code only if the recipient can open the link immediately.</p>
-                        </div>
+                <div class="qr-output" id="qrWrap" hidden>
+                    <div class="qr-card">
+                        <div id="qrCode"></div>
+                        <p class="field-note">Use the QR code only if the recipient can open the link immediately.</p>
                     </div>
                 </div>
             </section>

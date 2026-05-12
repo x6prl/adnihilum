@@ -1,7 +1,5 @@
 :root {
     --bg: #08111f;
-    --bg-strong: #0d1829;
-    --paper: #111c2d;
     --paper-strong: #111c2d;
     --field: #020814;
     --ink: #f5f7fb;
@@ -9,11 +7,9 @@
     --line: #2b3b52;
     --accent: #7bb0ff;
     --accent-strong: #497ee4;
-    --accent-soft: #1b3355;
-    --success: #39b980;
+    --success: #176a42;
     --warning: #f2a65a;
     --danger: #ff6b81;
-    --radius-xl: 28px;
     --radius-lg: 18px;
 }
 
@@ -85,7 +81,6 @@ textarea {
 label,
 .primary-btn,
 .secondary-btn,
-summary,
 .step-index {
     font-family: "Trebuchet MS", "Segoe UI", sans-serif;
 }
@@ -127,16 +122,10 @@ summary,
     gap: 28px;
 }
 
-.panel {
-    position: relative;
-}
-
-.panel-primary {
-    padding: 0;
-}
-
-.panel-intro {
-    margin-bottom: 20px;
+.composer-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
 
 .eyebrow {
@@ -153,21 +142,12 @@ summary,
     font-weight: 700;
 }
 
-.panel-intro h1,
 .decryption-copy h2 {
     margin: 0;
     font-size: clamp(1.9rem, 3vw, 3.5rem);
     line-height: 0.98;
     letter-spacing: -0.04em;
     text-wrap: balance;
-}
-
-.lede {
-    margin: 10px 0 0;
-    max-width: 42rem;
-    color: var(--ink-soft);
-    font-size: 1rem;
-    line-height: 1.65;
 }
 
 .how-to-use {
@@ -194,7 +174,7 @@ summary,
 .footer-version span {
     position: relative;
     display: block;
-    margin-bottom: 8px;
+    margin: 0;
     color: var(--ink-soft);
     font-family: "Trebuchet MS", "Segoe UI", sans-serif;
     font-size: 0.76rem;
@@ -363,13 +343,12 @@ textarea.receive-state-error {
 }
 
 .primary-btn.is-success {
-    background: #176a42;
+    background: var(--success);
 }
 
 .secondary-btn {
     color: var(--ink);
     background: transparent;
-    border-color: transparent;
 }
 
 .secondary-btn:hover {
@@ -379,7 +358,6 @@ textarea.receive-state-error {
 .primary-btn:disabled,
 .secondary-btn:disabled {
     cursor: not-allowed;
-    transform: none;
     color: #7e8ca1;
     background: #172234;
     border-color: #25354b;
@@ -425,12 +403,12 @@ textarea.receive-state-error {
 .info-section {
     display: grid;
     gap: 20px;
-    content-visibility: auto;
-    contain-intrinsic-size: 900px;
+    min-width: 0;
 }
 
 .info-hero {
     max-width: 760px;
+    min-width: 0;
 }
 
 .info-hero h2 {
@@ -587,8 +565,6 @@ textarea.receive-state-error {
     margin-top: 18px;
     padding: 14px 2px 4px;
     color: var(--ink-soft);
-    content-visibility: auto;
-    contain-intrinsic-size: 180px;
 }
 
 .footer-block strong {
@@ -619,17 +595,6 @@ textarea.receive-state-error {
     margin-top: 14px;
 }
 
-.footer-version span {
-    margin: 0;
-}
-
-.footer-version code {
-    padding: 7px 10px;
-    border-radius: 999px;
-    color: var(--accent);
-    font-size: 0.82rem;
-}
-
 .footer-links {
     display: flex;
     flex-wrap: wrap;
@@ -652,7 +617,6 @@ textarea.receive-state-error {
     display: grid;
     justify-items: center;
     gap: 12px;
-    padding: 0;
 }
 
 #qrCode {
@@ -742,10 +706,6 @@ textarea.receive-state-error {
     background: var(--paper-strong);
 }
 
-.app-popup-head {
-    display: block;
-}
-
 .app-popup-head h2 {
     margin: 0;
     font-size: 1.35rem;
@@ -793,7 +753,6 @@ textarea.receive-state-error {
 @media (max-width: 680px) {
     body {
         min-height: 100dvh;
-        background: var(--bg);
     }
 
     .page-shell {
@@ -801,27 +760,12 @@ textarea.receive-state-error {
     }
 
     .topbar {
-        align-items: center;
         margin-bottom: 12px;
         gap: 10px;
     }
 
     .topbar-links {
-        justify-content: flex-end;
         gap: 10px;
-    }
-
-    .panel-intro {
-        margin-bottom: 14px;
-    }
-
-    .panel-intro h1 {
-        font-size: 1.7rem;
-    }
-
-    .lede {
-        font-size: 0.94rem;
-        line-height: 1.4;
     }
 
     .action-row {
@@ -839,12 +783,10 @@ textarea.receive-state-error {
         min-height: min(34dvh, 240px);
     }
 
-    .brand span,
-    .lede {
+    .brand span {
         max-width: 32ch;
     }
 
-    .how-to-use h1,
     .info-hero h2 {
         font-size: 1.35rem;
     }
@@ -901,14 +843,6 @@ textarea.receive-state-error {
         font-size: 0.82rem;
     }
 
-    .panel-intro h1 {
-        font-size: 1.5rem;
-    }
-
-    .lede {
-        font-size: 0.9rem;
-    }
-
     .footer-version {
         flex-direction: column;
         align-items: flex-start;
@@ -926,15 +860,7 @@ textarea.receive-state-error {
 }
 
 @media (max-width: 680px) and (max-height: 760px) {
-    .page-send .lede {
-        display: none;
-    }
-
     .page-send textarea {
         min-height: min(28dvh, 180px);
-    }
-
-    .page-send .panel-intro {
-        margin-bottom: 10px;
     }
 }
