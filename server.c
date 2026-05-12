@@ -186,6 +186,7 @@ typedef struct {
 enum assets_id_t {
 #if ASSEMBLED_HTML
 	ASSET_CLIENT_ASSEMBLED_HTML = 0,
+	ASSET_CLIENT_SIMPLE_ASSEMBLED_HTML,
 	ASSET_CLIENT_RECEIVE_ASSEMBLED_HTML,
 #else
 	ASSET_CLIENT_HTML = 0,
@@ -207,6 +208,7 @@ static uint8_t *assets_memory;
 static asset_t assets[ASSETS_COUNT] = {
 #if ASSEMBLED_HTML
 	[ASSET_CLIENT_ASSEMBLED_HTML] = { .content_type = _CONTENT_TYPE_HTML },
+	[ASSET_CLIENT_SIMPLE_ASSEMBLED_HTML] = { .content_type = _CONTENT_TYPE_HTML },
 	[ASSET_CLIENT_RECEIVE_ASSEMBLED_HTML] = { .content_type = _CONTENT_TYPE_HTML },
 #else
 	[ASSET_CLIENT_HTML] = { .content_type = _CONTENT_TYPE_HTML },
@@ -226,6 +228,7 @@ static asset_t assets[ASSETS_COUNT] = {
 static const char *asset_file_paths[ASSETS_COUNT] = {
 #if ASSEMBLED_HTML
 	[ASSET_CLIENT_ASSEMBLED_HTML] = "assets/client_assembled.html",
+	[ASSET_CLIENT_SIMPLE_ASSEMBLED_HTML] = "assets/client-simple_assembled.html",
 	[ASSET_CLIENT_RECEIVE_ASSEMBLED_HTML] = "assets/client-receive_assembled.html",
 #else
 	[ASSET_CLIENT_HTML] = "assets/client.html",
@@ -254,6 +257,7 @@ static const char *asset_file_paths[ASSETS_COUNT] = {
 static const char asset_paths[ASSETS_COUNT][ASSET_PATH_STRING_MAX_SIZE] = {
 #if ASSEMBLED_HTML
 	[ASSET_CLIENT_ASSEMBLED_HTML] = "/",
+	[ASSET_CLIENT_SIMPLE_ASSEMBLED_HTML] = "/simple",
 	[ASSET_CLIENT_RECEIVE_ASSEMBLED_HTML] = "/receive",
 #else
 	[ASSET_CLIENT_HTML] = "/",

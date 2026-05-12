@@ -16,9 +16,12 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 ASSETS_DIR = REPO_ROOT / "assets"
 SEND_HTML_IN = ASSETS_DIR / "client.html"
+SIMPLE_HTML_IN = ASSETS_DIR / "client-simple.html"
 RECEIVE_HTML_IN = ASSETS_DIR / "client-receive.html"
 CSS_FILE = ASSETS_DIR / "client.css"
+SIMPLE_CSS_FILE = ASSETS_DIR / "client-simple.css"
 SEND_HTML_OUT = ASSETS_DIR / "client_assembled.html"
+SIMPLE_HTML_OUT = ASSETS_DIR / "client-simple_assembled.html"
 RECEIVE_HTML_OUT = ASSETS_DIR / "client-receive_assembled.html"
 
 CSS_TAG = '<link rel="stylesheet" href="client.css">'
@@ -61,16 +64,18 @@ def prefer_min_js(stem: str) -> Path:
 def build_page(
     html_in: Path,
     html_out: Path,
+    css_tag: str,
+    css_file: Path,
     include_qr: bool,
     page_script_tag: str,
     page_script: str,
 ) -> str:
     html = read_text(html_in)
-    css = read_text(CSS_FILE)
+    css = read_text(css_file)
     client_shared = read_text(prefer_min_js("client-shared"))
     client = read_text(prefer_min_js("client"))
 
-    expected_tags = [CSS_TAG, CLIENT_SHARED_TAG, page_script_tag, CLIENT_TAG]
+    expected_tags = [css_tag, CLIENT_SHARED_TAG, page_script_tag, CLIENT_TAG]
     if include_qr:
         expected_tags.insert(1, QR_TAG)
 
@@ -78,7 +83,7 @@ def build_page(
         if tag not in html:
             sys.exit(f"expected '{tag}' in {html_in}")
 
-    html = html.replace(CSS_TAG, f"<style>\n{css.rstrip()}\n</style>", 1)
+    html = html.replace(css_tag, f"<style>\n{css.rstrip()}\n</style>", 1)
 
     bundle_parts = ["<script>(function(){"]
     if include_qr:
@@ -112,15 +117,15 @@ def build_page(
     return html
 
 
-def write_csp_header(send_html: str, receive_html: str, output_path: Path) -> None:
+def write_csp_header(html_pages: list[str], output_path: Path) -> None:
     script_hashes = sorted({
         hash_block_sha256(match.group(1))
-        for html in (send_html, receive_html)
+        for html in html_pages
         for match in SCRIPT_RE.finditer(html)
     })
     style_hashes = sorted({
         hash_block_sha256(match.group(1))
-        for html in (send_html, receive_html)
+        for html in html_pages
         for match in STYLE_RE.finditer(html)
     })
 
@@ -146,19 +151,32 @@ def main() -> None:
     send_html = build_page(
         html_in=SEND_HTML_IN,
         html_out=SEND_HTML_OUT,
+        css_tag=CSS_TAG,
+        css_file=CSS_FILE,
         include_qr=True,
+        page_script_tag=CLIENT_SEND_TAG,
+        page_script=read_text(prefer_min_js("client-send")),
+    )
+    simple_html = build_page(
+        html_in=SIMPLE_HTML_IN,
+        html_out=SIMPLE_HTML_OUT,
+        css_tag='<link rel="stylesheet" href="client-simple.css">',
+        css_file=SIMPLE_CSS_FILE,
+        include_qr=False,
         page_script_tag=CLIENT_SEND_TAG,
         page_script=read_text(prefer_min_js("client-send")),
     )
     receive_html = build_page(
         html_in=RECEIVE_HTML_IN,
         html_out=RECEIVE_HTML_OUT,
+        css_tag=CSS_TAG,
+        css_file=CSS_FILE,
         include_qr=False,
         page_script_tag=CLIENT_RECEIVE_TAG,
         page_script=read_text(prefer_min_js("client-receive")),
     )
     if len(sys.argv) == 2:
-        write_csp_header(send_html, receive_html, Path(sys.argv[1]))
+        write_csp_header([send_html, simple_html, receive_html], Path(sys.argv[1]))
     elif len(sys.argv) != 1:
         sys.exit("usage: assemble_html.py [csp_header_out]")
 
