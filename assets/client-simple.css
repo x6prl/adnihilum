@@ -57,6 +57,8 @@ a {
 
 .topbar {
     justify-content: space-between;
+    flex-wrap: nowrap;
+    gap: 16px;
 }
 
 .brand,
@@ -65,18 +67,30 @@ a {
 }
 
 .brand {
+    flex: 1 1 auto;
     min-width: 0;
+    gap: 12px;
+    font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+    font-size: 1rem;
     font-weight: 700;
+    letter-spacing: 0.02em;
 }
 
 .brand img {
     display: block;
-    border-radius: 8px;
+    flex: 0 0 auto;
+    border-radius: 12px;
 }
 
 .topbar-link,
 .app-popup p {
     color: var(--muted);
+}
+
+.topbar-link {
+    flex: 0 0 auto;
+    font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+    font-size: 0.92rem;
 }
 
 .composer {
@@ -261,7 +275,11 @@ textarea.textarea-locked {
 @media (max-width: 680px) {
     .app {
         min-height: 100dvh;
-        padding: 10px;
+        padding: 12px;
+    }
+
+    .topbar {
+        gap: 10px;
     }
 
     .composer {
@@ -285,7 +303,17 @@ textarea.textarea-locked {
 }
 
 @media (max-width: 420px) {
+    .brand {
+        gap: 10px;
+        font-size: 0.95rem;
+    }
+
+    .brand img {
+        width: 36px;
+        height: 36px;
+    }
+
     .topbar-link {
-        display: none;
+        font-size: 0.82rem;
     }
 }
