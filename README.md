@@ -125,6 +125,8 @@ pkg install clang libmicrohttpd openssl-tool
 openssl req -x509 -newkey rsa:4096 -nodes -keyout key.pem -out cert.pem -days 365 -subj "/CN=localhost"
 # now you may run
 ./adnihilum
+# use tail to watch the logfile
+tail -f adnihilum.log 
 ```
 
 ## Protocol Overview
