@@ -657,6 +657,16 @@ static enum MHD_Result send_response(struct MHD_Connection *c, unsigned code,
 	case HP_API_BLOB:
 		MHD_add_response_header(resp, "Cache-Control", "no-store");
 		MHD_add_response_header(resp, "Referrer-Policy", "no-referrer");
+		{
+			const char *origin = MHD_lookup_connection_value(
+				c, MHD_HEADER_KIND, "Origin");
+			if (origin && 0 == memcmp(origin, "null", 5)) {
+				MHD_add_response_header(
+					resp, "Access-Control-Allow-Origin",
+					"null");
+				MHD_add_response_header(resp, "Vary", "Origin");
+			}
+		}
 		MHD_add_response_header(resp, "Cross-Origin-Resource-Policy",
 					"same-origin");
 		break;
@@ -874,7 +884,8 @@ static enum MHD_Result ahc(void *cls, struct MHD_Connection *conn,
 				statistics.connections_unknown,
 				statistics.connections_debounced,
 				(unsigned long long)statistics.page_root_total,
-				(unsigned long long)statistics.page_simple_total);
+				(unsigned long long)
+					statistics.page_simple_total);
 #else
 			int written = snprintf(payload, sizeof(payload),
 					       "{\"uptime_hours\":%.1f,"
