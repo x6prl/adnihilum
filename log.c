@@ -42,6 +42,7 @@ void log_init(void)
 			log_file_path);
 		exit(EXIT_FAILURE);
 	}
+	setvbuf(log_file, NULL, _IOLBF, 0);
 #endif
 }
 
