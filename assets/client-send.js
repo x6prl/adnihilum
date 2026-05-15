@@ -250,7 +250,6 @@
 				shared.bytesToHex(idBytes);
 			const res = await fetch(url, {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/octet-stream' },
 				body: blob,
 			});
 			if (!res.ok) {
