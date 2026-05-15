@@ -210,8 +210,10 @@ static uint8_t *assets_memory;
 static asset_t assets[ASSETS_COUNT] = {
 #if ASSEMBLED_HTML
 	[ASSET_CLIENT_ASSEMBLED_HTML] = { .content_type = _CONTENT_TYPE_HTML },
-	[ASSET_CLIENT_SIMPLE_ASSEMBLED_HTML] = { .content_type = _CONTENT_TYPE_HTML },
-	[ASSET_CLIENT_RECEIVE_ASSEMBLED_HTML] = { .content_type = _CONTENT_TYPE_HTML },
+	[ASSET_CLIENT_SIMPLE_ASSEMBLED_HTML] = { .content_type =
+							 _CONTENT_TYPE_HTML },
+	[ASSET_CLIENT_RECEIVE_ASSEMBLED_HTML] = { .content_type =
+							  _CONTENT_TYPE_HTML },
 #else
 	[ASSET_CLIENT_HTML] = { .content_type = _CONTENT_TYPE_HTML },
 	[ASSET_CLIENT_SIMPLE_HTML] = { .content_type = _CONTENT_TYPE_HTML },
@@ -230,8 +232,10 @@ static asset_t assets[ASSETS_COUNT] = {
 static const char *asset_file_paths[ASSETS_COUNT] = {
 #if ASSEMBLED_HTML
 	[ASSET_CLIENT_ASSEMBLED_HTML] = "assets/client_assembled.html",
-	[ASSET_CLIENT_SIMPLE_ASSEMBLED_HTML] = "assets/client-simple_assembled.html",
-	[ASSET_CLIENT_RECEIVE_ASSEMBLED_HTML] = "assets/client-receive_assembled.html",
+	[ASSET_CLIENT_SIMPLE_ASSEMBLED_HTML] =
+		"assets/client-simple_assembled.html",
+	[ASSET_CLIENT_RECEIVE_ASSEMBLED_HTML] =
+		"assets/client-receive_assembled.html",
 #else
 	[ASSET_CLIENT_HTML] = "assets/client.html",
 	[ASSET_CLIENT_SIMPLE_HTML] = "assets/client-simple.html",
@@ -626,17 +630,16 @@ static enum MHD_Result send_response(struct MHD_Connection *c, unsigned code,
 			"frame-ancestors 'none'; "
 			"form-action 'self'");
 #else
-		MHD_add_response_header(
-			resp, "Content-Security-Policy",
-			"default-src 'self'; "
-			"script-src 'self'; "
-			"style-src 'self'; "
-			"img-src 'self' data:; "
-			"connect-src 'self'; "
-			"object-src 'none'; "
-			"base-uri 'none'; "
-			"frame-ancestors 'none'; "
-			"form-action 'self'");
+		MHD_add_response_header(resp, "Content-Security-Policy",
+					"default-src 'self'; "
+					"script-src 'self'; "
+					"style-src 'self'; "
+					"img-src 'self' data:; "
+					"connect-src 'self'; "
+					"object-src 'none'; "
+					"base-uri 'none'; "
+					"frame-ancestors 'none'; "
+					"form-action 'self'");
 #endif
 		MHD_add_response_header(resp, "Cross-Origin-Opener-Policy",
 					"same-origin");
