@@ -51,7 +51,7 @@ static bool key_cmp(htable_key_t a, htable_key_t b)
 	return (a.h == b.h && a.l == b.l);
 }
 
-static void htable_swap(uint32_t a, uint32_t b)
+static void htable_swap(htable_index_t a, htable_index_t b)
 {
 	// swap keys
 	htable_key_t tmpk = g_keys[a];
