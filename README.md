@@ -1,5 +1,10 @@
 # Ad Nihilum (`adnihilum`)
 
+[![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL--3.0--or--later-blue.svg)](LICENSE)
+[![Service](https://img.shields.io/badge/service-adnihilum.net-2ea44f.svg)](https://adnihilum.net/)
+[![C](https://img.shields.io/badge/C-C23-555555.svg)](CMakeLists.txt)
+[![JavaScript](https://img.shields.io/badge/JavaScript-WebCrypto-f7df1e.svg)](assets/client-shared.js)
+
 `Ad Nihilum` provides ephemeral secret sharing with single-use retrieval and automatic expiration. The client runs in the browser; the server is a small daemon in C that stores blobs in RAM until they are retrieved once or they expire.
 
 ## Demo
