@@ -38,6 +38,19 @@ Use it when you want:
 
 ## Build & Run
 
+Install the daemon build dependencies for your distribution:
+
+```bash
+# Ubuntu / Debian
+sudo apt install build-essential cmake pkg-config libmicrohttpd-dev
+
+# Fedora
+sudo dnf install gcc cmake pkgconf-pkg-config libmicrohttpd-devel
+
+# Arch Linux
+sudo pacman -S base-devel cmake pkgconf libmicrohttpd
+```
+
 ```bash
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j
@@ -49,7 +62,24 @@ cmake --build build -j
 ./build/adnihilum --port 8443 --cert cert.pem --key key.pem
 ```
 
-The client UI is served from `client.html`. You can host it statically or let the bundled server deliver it from the root endpoint.
+The client UI is served from `client.html`. You can (1) host it statically, (2) keep as a file on user machines or let the bundled server (3) deliver it from the root endpoint.
+
+If you build with `-DASSEMBLED_HTML=ON`, the build also assembles and minifies bundled client assets.
+That optional path needs these additional tools:
+
+```bash
+# Ubuntu / Debian
+sudo apt install python3 nodejs npm
+sudo npm install -g uglify-js
+
+# Fedora
+sudo dnf install python3 nodejs npm
+sudo npm install -g uglify-js
+
+# Arch Linux
+sudo pacman -S python nodejs npm
+sudo npm install -g uglify-js
+```
 
 ## Local quick-up using Tailscale
 
