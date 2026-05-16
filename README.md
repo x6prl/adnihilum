@@ -1,5 +1,6 @@
 # Ad Nihilum (`adnihilum`)
 
+[![CI](https://github.com/x6prl/adnihilum/actions/workflows/ci.yml/badge.svg)](https://github.com/x6prl/adnihilum/actions/workflows/ci.yml)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL--3.0--or--later-blue.svg)](LICENSE)
 [![Service](https://img.shields.io/badge/service-adnihilum.net-2ea44f.svg)](https://adnihilum.net/)
 [![C](https://img.shields.io/badge/C-C23-555555.svg)](CMakeLists.txt)
