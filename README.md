@@ -12,6 +12,16 @@
 
 https://adnihilum.net/ 
 
+## Why Ad Nihilum
+
+Ad Nihilum is for sending a password, token, recovery code, or private note. The browser encrypts the secret before upload, the decryption key stays in the URL fragment, and the server only holds an opaque RAM blob that disappears after one successful read or after the TTL (1 hour).
+
+Use it when you want:
+
+- A link you can paste into a chat with sensitive information.
+- Optional password wrapping when the link and a second factor should travel separately.
+- One-time retrieval by design, not as a UI convention.
+
 ## Features
 
 - Client-side AES-GCM encryption with a fresh 256-bit key, nonce, and salt for every secret (WebCrypto-based).
