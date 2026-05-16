@@ -8,7 +8,7 @@
 
 `Ad Nihilum` provides ephemeral secret sharing with single-use retrieval and automatic expiration. The client runs in the browser; the server is a small daemon in C that stores blobs in RAM until they are retrieved once or they expire.
 
-## Demo
+## Public service
 
 https://adnihilum.net/ 
 
@@ -21,6 +21,10 @@ https://adnihilum.net/
 - Server or URL-observer cannot guess whether a password was used or not. 
 - Optional Tailscale-aware forwarding when compiled with `-DTAILSCALE=ON`.
 - QR code generation and share links in the form `https://host/#<id>/<key>` for easy transfer between devices.
+
+## Screenshots
+
+<img src="screenshots/simple-mobile.png" alt="Simple mobile UI" width="260">
 
 ## Build & Run
 
