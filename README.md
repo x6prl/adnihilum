@@ -88,7 +88,7 @@ You can control compile-time features via CMake options.
 - `STATISTICS` (default `OFF`): track detailed storage allocator, request, and debouncer counters (dumped to the log on shutdown). Also makes `/status` more verbose.
 - `LOCK_MEMORY_TO_RAM` (default `OFF`): call `mlock` on storage buffers to avoid swapping.
 - `TAILSCALE` (default `OFF`): trust the `X-Forwarded-For` header from Tailscale funnel.
-- `ASSEMBLED_HTML` (default `ON`): serve the pre-built `client_assembled.html` asset.
+- `ASSEMBLED_HTML` (default `OFF`): assemble and serve single-file HTML assets.
 - `DEBOUNCER` (default `ON`): enable simple per-client request debouncing.
 - `SIMD_X86` (default `ON`): compile AVX2/SSE-accelerated code paths.
 - `SIMD_ARM` (default `OFF`): compile ARM NEON code paths for capable devices.

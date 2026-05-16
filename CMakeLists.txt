@@ -17,7 +17,7 @@ option(TRACY_ENABLE "Enable Tracy profiler instrumentation" OFF)
 option(STATISTICS "Enable statistics" OFF)
 option(LOCK_MEMORY_TO_RAM "Lock storage buffers in RAM with mlock" OFF)
 option(TAILSCALE "Enable Tailscale-aware HTTP handling" OFF)
-option(ASSEMBLED_HTML "Response with cliet_assembled.html" ON)
+option(ASSEMBLED_HTML "Serve assembled single-file HTML assets" OFF)
 option(DEBOUNCER "Enable per-client request debouncing" ON)
 
 option(SIMD_X86 "Enable x86 SIMD code paths" ON)
