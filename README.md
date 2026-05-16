@@ -151,7 +151,7 @@ tail -f adnihilum.log
 
 ## License
 
-This project is licensed under the GNU General Public License v3.0. See `LICENSE` for the full text.
+This project is licensed under the GNU General Public License v3.0 or later (`GPL-3.0-or-later`). See `LICENSE` for the GPLv3 text and the source file SPDX notices for the "or later" grant.
 
 [QRCode.js](https://davidshimjs.github.io/qrcodejs/) is under MIT license.
 
